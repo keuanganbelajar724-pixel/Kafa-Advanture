@@ -1,0 +1,6 @@
+{
+  "name": "ENGLISH ADVENTURE",
+  "description": "Learn English. Explore. Play. An interactive 2.5D educational adventure game for children aged 6–10.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

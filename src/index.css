@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  h1, h2, h3, h4, .font-game {
+    font-family: 'Fredoka', 'Nunito', cursive, sans-serif;
+  }
+}
+
+@keyframes gentle-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes gentle-sway {
+  0%, 100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes cloud-pan {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(0.9) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15) rotate(15deg);
+    opacity: 1;
+  }
+}
+
+@keyframes smoke-puff {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-25px) translateX(8px) scale(1.2);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-50px) translateX(18px) scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes leaf-fall {
+  0% {
+    transform: translateY(-20px) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(280px) translateX(60px) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+@keyframes flutter {
+  0%, 100% {
+    transform: translateY(0) scaleX(1);
+  }
+  50% {
+    transform: translateY(-12px) scaleX(0.7);
+  }
+}
+
+.animate-float {
+  animation: gentle-float 2.8s ease-in-out infinite;
+}
+
+.animate-sway {
+  animation: gentle-sway 3.2s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.animate-smoke {
+  animation: smoke-puff 3s ease-out infinite;
+}
+
+.animate-leaf {
+  animation: leaf-fall 6s ease-in-out infinite;
+}
+
+.animate-flutter {
+  animation: flutter 1.8s ease-in-out infinite;
+}
+
+/* Custom game button press feel */
+.game-btn-bounce:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+@keyframes robo-walk {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+}
+
+@keyframes robo-idle {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(-2.5px) scaleY(1.02);
+  }
+}
+
+.animate-robo-walk {
+  animation: robo-walk 0.35s ease-in-out infinite;
+}
+
+.animate-robo-idle {
+  animation: robo-idle 2.4s ease-in-out infinite;
+}
