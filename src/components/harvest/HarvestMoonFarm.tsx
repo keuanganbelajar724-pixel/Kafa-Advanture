@@ -229,8 +229,12 @@ export const HarvestMoonFarm: React.FC<HarvestMoonFarmProps> = ({
   const [farmQuizSelected, setFarmQuizSelected] = useState<number | null>(null);
   const [farmQuizAnswered, setFarmQuizAnswered] = useState<boolean>(false);
 
-  // Key tracking ref
+  // Key tracking ref & Mobile D-pad refs
   const keysRef = useRef<Record<string, boolean>>({});
+  const mobileLeftRef = useRef<boolean>(false);
+  const mobileRightRef = useRef<boolean>(false);
+  const mobileUpRef = useRef<boolean>(false);
+  const mobileDownRef = useRef<boolean>(false);
   const farmAreaRef = useRef<HTMLDivElement>(null);
 
   // 12 Farm Plots state
@@ -766,10 +770,10 @@ export const HarvestMoonFarm: React.FC<HarvestMoonFarmProps> = ({
       let dx = 0;
       let dy = 0;
 
-      if (keys['w'] || keys['arrowup']) dy -= 1;
-      if (keys['s'] || keys['arrowdown']) dy += 1;
-      if (keys['a'] || keys['arrowleft']) dx -= 1;
-      if (keys['d'] || keys['arrowright']) dx += 1;
+      if (keys['w'] || keys['arrowup'] || mobileUpRef.current) dy -= 1;
+      if (keys['s'] || keys['arrowdown'] || mobileDownRef.current) dy += 1;
+      if (keys['a'] || keys['arrowleft'] || mobileLeftRef.current) dx -= 1;
+      if (keys['d'] || keys['arrowright'] || mobileRightRef.current) dx += 1;
 
       if (dx !== 0 || dy !== 0) {
         setIsWalking(true);
@@ -811,6 +815,22 @@ export const HarvestMoonFarm: React.FC<HarvestMoonFarmProps> = ({
     const clickY = e.clientY - rect.top;
 
     // Smoothly step player towards click target
+    setPlayerFacing(clickX < playerPos.x ? 'left' : 'right');
+    setIsWalking(true);
+    setPlayerPos({
+      x: Math.min(940, Math.max(60, clickX)),
+      y: Math.min(620, Math.max(130, clickY)),
+    });
+    setTimeout(() => setIsWalking(false), 300);
+  };
+
+  const handleMapTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!farmAreaRef.current || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const rect = farmAreaRef.current.getBoundingClientRect();
+    const clickX = touch.clientX - rect.left;
+    const clickY = touch.clientY - rect.top;
+
     setPlayerFacing(clickX < playerPos.x ? 'left' : 'right');
     setIsWalking(true);
     setPlayerPos({
@@ -958,11 +978,12 @@ export const HarvestMoonFarm: React.FC<HarvestMoonFarmProps> = ({
       {/* ======================================================== */}
       {/* WALKABLE 2.5D HARVEST MOON FARM WORLD CANVAS */}
       {/* ======================================================== */}
-      <div className="relative flex-1 w-full overflow-hidden flex items-center justify-center p-2 bg-gradient-to-b from-sky-300 via-sky-200 to-emerald-200">
+      <div className="relative flex-1 w-full overflow-hidden flex items-center justify-center p-1 sm:p-2 bg-gradient-to-b from-sky-300 via-sky-200 to-emerald-200">
         <div
           ref={farmAreaRef}
           onClick={handleMapClick}
-          className="relative w-full max-w-[1040px] h-[640px] md:h-[680px] rounded-3xl shadow-2xl border-4 border-amber-900/60 overflow-hidden cursor-crosshair select-none"
+          onTouchStart={handleMapTouch}
+          className="relative w-full max-w-[1040px] h-[520px] sm:h-[640px] md:h-[680px] rounded-3xl shadow-2xl border-4 border-amber-900/60 overflow-hidden cursor-crosshair select-none touch-none"
           style={{
             background: 'radial-gradient(ellipse at 40% 30%, #4ade80 0%, #22c55e 60%, #16a34a 100%)',
           }}
@@ -1397,6 +1418,87 @@ export const HarvestMoonFarm: React.FC<HarvestMoonFarmProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ON-SCREEN MOBILE D-PAD (FOR SMARTPHONES) */}
+          <div className="absolute bottom-3 left-3 z-40 pointer-events-auto sm:hidden flex flex-col items-center gap-1 select-none">
+            <button
+              onPointerDown={(e) => {
+                e.preventDefault();
+                mobileUpRef.current = true;
+                if ('vibrate' in navigator) navigator.vibrate?.(10);
+              }}
+              onPointerUp={(e) => {
+                e.preventDefault();
+                mobileUpRef.current = false;
+              }}
+              onPointerLeave={() => {
+                mobileUpRef.current = false;
+              }}
+              className="w-11 h-11 rounded-xl bg-slate-950/85 border-2 border-amber-400 text-amber-300 font-black text-base flex items-center justify-center active:scale-90 shadow-xl touch-none"
+              aria-label="Ke Atas"
+            >
+              ▲
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  mobileLeftRef.current = true;
+                  if ('vibrate' in navigator) navigator.vibrate?.(10);
+                }}
+                onPointerUp={(e) => {
+                  e.preventDefault();
+                  mobileLeftRef.current = false;
+                }}
+                onPointerLeave={() => {
+                  mobileLeftRef.current = false;
+                }}
+                className="w-11 h-11 rounded-xl bg-slate-950/85 border-2 border-amber-400 text-amber-300 font-black text-base flex items-center justify-center active:scale-90 shadow-xl touch-none"
+                aria-label="Ke Kiri"
+              >
+                ◀
+              </button>
+              <div className="w-8 h-8 rounded-full bg-slate-900/80 border border-amber-400/50 flex items-center justify-center text-xs text-amber-300 font-game font-bold">
+                🚜
+              </div>
+              <button
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  mobileRightRef.current = true;
+                  if ('vibrate' in navigator) navigator.vibrate?.(10);
+                }}
+                onPointerUp={(e) => {
+                  e.preventDefault();
+                  mobileRightRef.current = false;
+                }}
+                onPointerLeave={() => {
+                  mobileRightRef.current = false;
+                }}
+                className="w-11 h-11 rounded-xl bg-slate-950/85 border-2 border-amber-400 text-amber-300 font-black text-base flex items-center justify-center active:scale-90 shadow-xl touch-none"
+                aria-label="Ke Kanan"
+              >
+                ▶
+              </button>
+            </div>
+            <button
+              onPointerDown={(e) => {
+                e.preventDefault();
+                mobileDownRef.current = true;
+                if ('vibrate' in navigator) navigator.vibrate?.(10);
+              }}
+              onPointerUp={(e) => {
+                e.preventDefault();
+                mobileDownRef.current = false;
+              }}
+              onPointerLeave={() => {
+                mobileDownRef.current = false;
+              }}
+              className="w-11 h-11 rounded-xl bg-slate-950/85 border-2 border-amber-400 text-amber-300 font-black text-base flex items-center justify-center active:scale-90 shadow-xl touch-none"
+              aria-label="Ke Bawah"
+            >
+              ▼
+            </button>
+          </div>
         </div>
       </div>
 

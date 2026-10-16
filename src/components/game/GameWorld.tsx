@@ -131,23 +131,44 @@ export const GameWorld: React.FC<GameWorldProps> = ({
 
   const activePowerConfig = HERO_POWERS.find(p => p.id === (activePower || 'star_blast')) || HERO_POWERS[0];
 
-  // Responsive Viewport Height Adaptive Scaling (Eliminates empty bottom void)
+  // Responsive Viewport Height & Width Adaptive Scaling for Mobile Phones & Tablets
+  const [viewportWidth, setViewportWidth] = useState<number>(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1000
+  );
   const [viewportHeight, setViewportHeight] = useState<number>(() =>
     typeof window !== 'undefined' ? window.innerHeight : WORLD_HEIGHT
   );
+  const [showPortraitTip, setShowPortraitTip] = useState<boolean>(true);
+  const [controlMode, setControlMode] = useState<'dpad' | 'joystick'>('dpad');
+  const [showPowerDrawer, setShowPowerDrawer] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
+        setViewportWidth(containerRef.current.clientWidth);
         setViewportHeight(containerRef.current.clientHeight);
+      } else if (typeof window !== 'undefined') {
+        setViewportWidth(window.innerWidth);
+        setViewportHeight(window.innerHeight);
       }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, []);
 
-  const worldScale = Math.max(0.65, Math.min(2.4, viewportHeight / WORLD_HEIGHT));
+  const isPortrait = viewportWidth < viewportHeight;
+  const isMobile = viewportWidth < 768;
+
+  // Responsive world scale: In portrait mode on phones, ensure at least 480px width is visible
+  const worldScale = isPortrait
+    ? Math.max(0.55, Math.min(1.25, Math.min(viewportHeight / WORLD_HEIGHT, viewportWidth / 480)))
+    : Math.max(0.55, Math.min(2.0, viewportHeight / WORLD_HEIGHT));
 
   const flagpoleClearedRef = useRef<boolean>(false);
   const [flagpoleCleared, setFlagpoleCleared] = useState<boolean>(false);
@@ -184,6 +205,10 @@ export const GameWorld: React.FC<GameWorldProps> = ({
   const isSprintingRef = useRef<boolean>(false);
   const speedBoostUntilRef = useRef<number>(0);
   const mobileSprintRef = useRef<boolean>(false);
+  const mobileLeftRef = useRef<boolean>(false);
+  const mobileRightRef = useRef<boolean>(false);
+  const mobileUpRef = useRef<boolean>(false);
+  const mobileDownRef = useRef<boolean>(false);
   const visitedZonesRef = useRef<Set<string>>(new Set());
 
   // Reset zone milestone history when switching levels
@@ -199,6 +224,7 @@ export const GameWorld: React.FC<GameWorldProps> = ({
   const isJoystickActiveRef = useRef<boolean>(false);
   const joystickStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const [joystickThumbPos, setJoystickThumbPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [dismissRotateTip, setDismissRotateTip] = useState<boolean>(false);
   const lastFootstepRef = useRef<number>(0);
   const lastDustRef = useRef<number>(0);
 
@@ -577,10 +603,10 @@ export const GameWorld: React.FC<GameWorldProps> = ({
       const speedMultiplier = hasSpeedPadBoost ? 2.1 : isSprintMode ? 1.65 : 1.0;
       const effectiveSpeed = SPEED * speedMultiplier;
 
-      const moveLeft = keys.current['a'] || keys.current['arrowleft'] || joystickVector.current.x < -0.25;
-      const moveRight = keys.current['d'] || keys.current['arrowright'] || joystickVector.current.x > 0.25;
-      const moveUp = keys.current['w'] || keys.current['arrowup'] || joystickVector.current.y < -0.25;
-      const moveDown = keys.current['s'] || keys.current['arrowdown'] || joystickVector.current.y > 0.25;
+      const moveLeft = keys.current['a'] || keys.current['arrowleft'] || joystickVector.current.x < -0.25 || mobileLeftRef.current;
+      const moveRight = keys.current['d'] || keys.current['arrowright'] || joystickVector.current.x > 0.25 || mobileRightRef.current;
+      const moveUp = keys.current['w'] || keys.current['arrowup'] || joystickVector.current.y < -0.25 || mobileUpRef.current;
+      const moveDown = keys.current['s'] || keys.current['arrowdown'] || joystickVector.current.y > 0.25 || mobileDownRef.current;
 
       let targetVx = 0;
       let targetVy = 0;
@@ -1214,29 +1240,15 @@ export const GameWorld: React.FC<GameWorldProps> = ({
     return () => cancelAnimationFrame(requestRef.current);
   }, [level, spawnDust, triggerHitMysteryBlock, triggerBouncer, triggerFlagpole, onCollectCoin, onCollectStar, onTakeDamage]);
 
-  // Touch Virtual Joystick
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    const rect = e.currentTarget.getBoundingClientRect();
-    const startX = touch.clientX - rect.left;
-    const startY = touch.clientY - rect.top;
-    joystickStartPos.current = { x: startX, y: startY };
-    isJoystickActiveRef.current = true;
-    setIsJoystickActive(true);
-    setJoystickThumbPos({ x: 0, y: 0 });
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isJoystickActiveRef.current) return;
-    const touch = e.touches[0];
-    const rect = e.currentTarget.getBoundingClientRect();
-    const currentX = touch.clientX - rect.left;
-    const currentY = touch.clientY - rect.top;
-
-    const dx = currentX - joystickStartPos.current.x;
-    const dy = currentY - joystickStartPos.current.y;
+  // Touch Virtual Joystick with Center Anchoring & Pointer Capture
+  const updateJoystickPosition = (clientX: number, clientY: number, currentTarget: HTMLElement) => {
+    const rect = currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = clientX - centerX;
+    const dy = clientY - centerY;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const maxRadius = 45;
+    const maxRadius = Math.max(32, rect.width / 2 - 16);
 
     if (dist > 0) {
       const angle = Math.atan2(dy, dx);
@@ -1248,10 +1260,32 @@ export const GameWorld: React.FC<GameWorldProps> = ({
         x: thumbX / maxRadius,
         y: thumbY / maxRadius,
       };
+    } else {
+      setJoystickThumbPos({ x: 0, y: 0 });
+      joystickVector.current = { x: 0, y: 0 };
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleJoystickPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    isJoystickActiveRef.current = true;
+    setIsJoystickActive(true);
+    updateJoystickPosition(e.clientX, e.clientY, e.currentTarget);
+    if ('vibrate' in navigator) navigator.vibrate?.(10);
+  };
+
+  const handleJoystickPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isJoystickActiveRef.current) return;
+    updateJoystickPosition(e.clientX, e.clientY, e.currentTarget);
+  };
+
+  const handleJoystickPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
     isJoystickActiveRef.current = false;
     setIsJoystickActive(false);
     setJoystickThumbPos({ x: 0, y: 0 });
@@ -2257,32 +2291,166 @@ export const GameWorld: React.FC<GameWorldProps> = ({
         )}
       </AnimatePresence>
 
-      {/* MOBILE CONTROLS OVERLAY (CLEAN, MINIMAL & TRANSLUCENT WITH DUALSHOCK GLYPHS) */}
-      <div className="absolute inset-0 pointer-events-none z-[700] flex flex-col justify-end p-4 md:p-8">
-        <div className="w-full flex items-end justify-between">
-          {/* Virtual Joystick (Mobile only / Touch) */}
-          <div
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-slate-950/40 backdrop-blur-sm border-2 border-slate-700/60 flex items-center justify-center pointer-events-auto touch-none shadow-2xl active:bg-slate-950/60 cursor-pointer"
+      {/* PORTRAIT ORIENTATION BANNER TIP FOR SMARTPHONES */}
+      {isPortrait && showPortraitTip && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[850] max-w-[92vw] px-3.5 py-2 bg-slate-900/95 border border-amber-400/80 rounded-2xl shadow-2xl backdrop-blur-md flex items-center justify-between gap-2 pointer-events-auto animate-bounce">
+          <div className="flex items-center gap-2 text-xs font-bold font-game text-amber-200">
+            <span className="text-base animate-pulse">📱</span>
+            <span>Tips: Miringkan HP (Lanskap) untuk tampilan lebih luas!</span>
+          </div>
+          <button
+            onClick={() => setShowPortraitTip(false)}
+            className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer"
+            aria-label="Tutup tips"
           >
-            <div
-              className="w-14 h-14 rounded-full bg-white/90 shadow-xl border-2 border-amber-400 flex items-center justify-center transition-transform"
-              style={{
-                transform: `translate(${joystickThumbPos.x}px, ${joystickThumbPos.y}px)`,
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* MOBILE CONTROLS OVERLAY (ERGONOMIC & COMPATIBLE FOR SMARTPHONES) */}
+      <div className="absolute inset-0 pointer-events-none z-[850] flex flex-col justify-end p-2 sm:p-4 md:p-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="w-full flex items-end justify-between gap-2">
+          {/* ======================================================== */}
+          {/* LEFT THUMB CONTROLLER (4-WAY D-PAD OR ANALOG JOYSTICK) */}
+          {/* ======================================================== */}
+          <div className="flex flex-col items-start gap-1 sm:gap-1.5 pointer-events-auto">
+            {/* Controller Mode Switcher Pill */}
+            <button
+              onClick={() => {
+                audio.playButtonClick();
+                setControlMode(prev => prev === 'dpad' ? 'joystick' : 'dpad');
               }}
+              className="px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur-md border border-amber-400/50 text-[9px] sm:text-[10px] text-amber-300 font-game font-bold shadow-lg flex items-center gap-1 active:scale-95 cursor-pointer"
+              title="Ganti mode kontrol HP"
             >
-              <div className="w-4 h-4 rounded-full bg-amber-500" />
-            </div>
+              <span>{controlMode === 'dpad' ? '🎮 D-Pad 4 Arah' : '🕹️ Joystick'}</span>
+              <span className="text-[8px] text-slate-400 bg-slate-800 px-1 rounded">⇄ Ganti</span>
+            </button>
+
+            {controlMode === 'dpad' ? (
+              /* Ergonomic 4-Directional D-Pad (Up/Down for Lane Depth + Left/Right) */
+              <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center select-none touch-none">
+                {/* Up Button (Jalur Atas) */}
+                <button
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    mobileUpRef.current = true;
+                    if ('vibrate' in navigator) navigator.vibrate?.(10);
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    mobileUpRef.current = false;
+                  }}
+                  onPointerLeave={() => { mobileUpRef.current = false; }}
+                  onPointerCancel={() => { mobileUpRef.current = false; }}
+                  className="absolute top-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-2 sm:border-3 border-amber-400 active:border-white active:scale-90 shadow-2xl flex flex-col items-center justify-center text-amber-300 touch-none cursor-pointer"
+                  aria-label="Jalan Atas"
+                >
+                  <span className="text-base sm:text-lg font-black leading-none">▲</span>
+                  <span className="text-[6px] sm:text-[7px] font-game font-black text-amber-200">ATAS</span>
+                </button>
+
+                {/* Down Button (Jalur Bawah) */}
+                <button
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    mobileDownRef.current = true;
+                    if ('vibrate' in navigator) navigator.vibrate?.(10);
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    mobileDownRef.current = false;
+                  }}
+                  onPointerLeave={() => { mobileDownRef.current = false; }}
+                  onPointerCancel={() => { mobileDownRef.current = false; }}
+                  className="absolute bottom-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-2 sm:border-3 border-amber-400 active:border-white active:scale-90 shadow-2xl flex flex-col items-center justify-center text-amber-300 touch-none cursor-pointer"
+                  aria-label="Jalan Bawah"
+                >
+                  <span className="text-[6px] sm:text-[7px] font-game font-black text-amber-200">BAWAH</span>
+                  <span className="text-base sm:text-lg font-black leading-none">▼</span>
+                </button>
+
+                {/* Left Button */}
+                <button
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    mobileLeftRef.current = true;
+                    if ('vibrate' in navigator) navigator.vibrate?.(10);
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    mobileLeftRef.current = false;
+                  }}
+                  onPointerLeave={() => { mobileLeftRef.current = false; }}
+                  onPointerCancel={() => { mobileLeftRef.current = false; }}
+                  className="absolute left-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-2 sm:border-3 border-amber-400 active:border-white active:scale-90 shadow-2xl flex flex-col items-center justify-center text-amber-300 touch-none cursor-pointer"
+                  aria-label="Jalan Kiri"
+                >
+                  <span className="text-base sm:text-lg font-black leading-none">◀</span>
+                  <span className="text-[6px] sm:text-[7px] font-game font-black text-amber-200">KIRI</span>
+                </button>
+
+                {/* Right Button */}
+                <button
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    mobileRightRef.current = true;
+                    if ('vibrate' in navigator) navigator.vibrate?.(10);
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    mobileRightRef.current = false;
+                  }}
+                  onPointerLeave={() => { mobileRightRef.current = false; }}
+                  onPointerCancel={() => { mobileRightRef.current = false; }}
+                  className="absolute right-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-2 sm:border-3 border-amber-400 active:border-white active:scale-90 shadow-2xl flex flex-col items-center justify-center text-amber-300 touch-none cursor-pointer"
+                  aria-label="Jalan Kanan"
+                >
+                  <span className="text-base sm:text-lg font-black leading-none">▶</span>
+                  <span className="text-[6px] sm:text-[7px] font-game font-black text-amber-200">KANAN</span>
+                </button>
+
+                {/* Center Robot Badge */}
+                <div className="w-9 h-9 rounded-full bg-slate-950/90 border border-amber-400/60 flex items-center justify-center text-xs shadow-inner pointer-events-none text-amber-300">
+                  🤖
+                </div>
+              </div>
+            ) : (
+              /* Analog Virtual Joystick with Pointer Capture */
+              <div
+                onPointerDown={handleJoystickPointerDown}
+                onPointerMove={handleJoystickPointerMove}
+                onPointerUp={handleJoystickPointerUp}
+                onPointerCancel={handleJoystickPointerUp}
+                className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-950/70 backdrop-blur-md border-2 border-amber-400/70 flex items-center justify-center pointer-events-auto touch-none shadow-2xl active:bg-slate-950/90 cursor-pointer relative"
+              >
+                {/* Direction guide marks */}
+                <div className="absolute top-1 text-[8px] text-amber-400/60 pointer-events-none">▲</div>
+                <div className="absolute bottom-1 text-[8px] text-amber-400/60 pointer-events-none">▼</div>
+                <div className="absolute left-1.5 text-[8px] text-amber-400/60 pointer-events-none">◀</div>
+                <div className="absolute right-1.5 text-[8px] text-amber-400/60 pointer-events-none">▶</div>
+
+                <div
+                  className="w-12 h-12 rounded-full bg-gradient-to-b from-white to-amber-200 shadow-2xl border-2 border-amber-500 flex items-center justify-center transition-transform pointer-events-none"
+                  style={{
+                    transform: `translate(${joystickThumbPos.x}px, ${joystickThumbPos.y}px)`,
+                  }}
+                >
+                  <div className="w-4 h-4 rounded-full bg-amber-500 shadow" />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Action Buttons & Quick Jurus Dock */}
-          <div className="flex flex-col items-end gap-2.5 pointer-events-auto">
-            {/* Quick 6-Superpowers Dock (Mobile / Quick Tap) */}
-            <div className="flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1.5 rounded-2xl border border-white/10 shadow-2xl">
-              <span className="text-[10px] font-black text-amber-300 font-game hidden sm:inline mr-1">6 JURUS:</span>
-              {HERO_POWERS.map(pow => {
+          {/* ======================================================== */}
+          {/* RIGHT THUMB CONTROLLER (ACTION BUTTONS CLUSTER) */}
+          {/* ======================================================== */}
+          <div className="flex flex-col items-end gap-1 sm:gap-2 pointer-events-auto">
+            {/* Quick 6-Superpowers Drawer / Strip */}
+            <div className="flex items-center gap-1 bg-slate-950/90 backdrop-blur-md px-2 py-1 rounded-2xl border border-white/10 shadow-2xl">
+              <span className="text-[9px] font-black text-amber-300 font-game hidden sm:inline mr-0.5">JURUS:</span>
+              {HERO_POWERS.slice(0, isMobile ? 3 : 6).map(pow => {
                 const isActive = (activePower || 'star_blast') === pow.id;
                 return (
                   <button
@@ -2290,10 +2458,10 @@ export const GameWorld: React.FC<GameWorldProps> = ({
                     onClick={() => {
                       triggerActivePower(pow.id);
                     }}
-                    className={`w-9 h-9 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center text-sm transition-all cursor-pointer active:scale-90 relative ${
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center text-xs transition-all cursor-pointer active:scale-90 relative ${
                       isActive
-                        ? `bg-gradient-to-br ${pow.gradient} text-slate-950 shadow-[0_0_14px_rgba(251,191,36,0.9)] scale-110 border-2 border-white ring-2 ring-amber-400/60 font-black`
-                        : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                        ? `bg-gradient-to-br ${pow.gradient} text-slate-950 shadow-[0_0_12px_rgba(251,191,36,0.9)] scale-110 border border-white font-black`
+                        : 'bg-slate-800/80 text-slate-200 border border-slate-700'
                     }`}
                     title={`${pow.name}: ${pow.description}`}
                   >
@@ -2301,17 +2469,29 @@ export const GameWorld: React.FC<GameWorldProps> = ({
                   </button>
                 );
               })}
+              {isMobile && (
+                <button
+                  onClick={() => cycleNextPower()}
+                  className="w-7 h-7 rounded-xl bg-slate-800 text-amber-300 text-[10px] font-black border border-slate-700 flex items-center justify-center cursor-pointer active:scale-95"
+                  title="Ganti Jurus Berikutnya"
+                >
+                  +3
+                </button>
+              )}
             </div>
 
-            {/* Main Action Buttons (Sprint, Jurus, Interact & Jump) */}
-            <div className="flex items-center gap-2 md:gap-2.5">
-              {/* Sprint Turbo Booster Button (PS3 Square ▢ / Shift / Z) */}
+            {/* Action Buttons: 2x2 Cluster on Mobile Phones / Inline on Large Screens */}
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2">
+              {/* SPRINT TURBO (Dash) */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onPointerDown={() => {
+                onPointerDown={(e) => {
+                  e.preventDefault();
                   mobileSprintRef.current = true;
+                  if ('vibrate' in navigator) navigator.vibrate?.(10);
                 }}
-                onPointerUp={() => {
+                onPointerUp={(e) => {
+                  e.preventDefault();
                   mobileSprintRef.current = false;
                 }}
                 onPointerLeave={() => {
@@ -2323,86 +2503,77 @@ export const GameWorld: React.FC<GameWorldProps> = ({
                   spawnDust(playerRef.current.x, playerRef.current.y, 2.0);
                   spawnFloatingScore(playerRef.current.x, playerRef.current.y - 50, '💨 ROCKET DASH! ⚡', '#38BDF8');
                 }}
-                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center font-bold text-xs shadow-2xl transition-all border-3 cursor-pointer ${
+                className={`relative w-12 h-12 sm:w-15 sm:h-15 rounded-2xl flex flex-col items-center justify-center font-bold text-xs shadow-2xl transition-all border-2 sm:border-3 cursor-pointer ${
                   isSprinting
-                    ? 'bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 text-white border-white ring-4 ring-cyan-300 animate-pulse'
-                    : 'bg-slate-900/80 hover:bg-slate-800 text-cyan-300 border-cyan-500/50'
+                    ? 'bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 text-white border-white ring-2 ring-cyan-300 animate-pulse'
+                    : 'bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border-cyan-500/50'
                 }`}
-                title="Lari Cepat / Sprint [Shift / Z / ▢]"
+                title="Lari Cepat / Sprint"
               >
-                {graphicSettings?.dualshockPrompts && (
-                  <span className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-pink-600 text-white font-black text-[11px] flex items-center justify-center border-2 border-white shadow-lg font-game">
-                    ▢
-                  </span>
-                )}
-                <span className="text-lg sm:text-xl">🚀</span>
-                <span className="font-game text-[8px] sm:text-[9px] uppercase font-black mt-0.5">
-                  {isSprinting ? 'TURBO' : 'SPRINT'}
+                <span className="text-base sm:text-lg">🚀</span>
+                <span className="font-game text-[7px] sm:text-[8px] uppercase font-black">
+                  {isSprinting ? 'TURBO' : 'LARI'}
                 </span>
               </motion.button>
 
-              {/* Jurus Attack Button (PS3 Circle ◯) */}
+              {/* INTERACT / ACTION BUTTON */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => {
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  if ('vibrate' in navigator) navigator.vibrate?.(15);
+                  triggerInteraction();
+                }}
+                className={`relative w-12 h-12 sm:w-15 sm:h-15 rounded-2xl flex flex-col items-center justify-center font-bold text-xs shadow-2xl transition-all border-2 sm:border-3 cursor-pointer ${
+                  nearDoorPortal || nearKnowledgePost || nearVocab || nearNpc || nearMiniGameGate
+                    ? 'bg-amber-400 text-slate-950 border-white ring-3 ring-amber-300 animate-pulse'
+                    : 'bg-slate-900/90 text-slate-300 border-slate-700'
+                }`}
+                title="Aksi Periksa / Masuk / Baca"
+              >
+                <span className="text-base sm:text-lg">
+                  {nearDoorPortal ? '🚪' : nearKnowledgePost ? '📖' : nearNpc ? '💬' : '🔍'}
+                </span>
+                <span className="font-game text-[7px] sm:text-[8px] uppercase font-black truncate max-w-[44px]">
+                  {nearDoorPortal ? 'MASUK' : nearKnowledgePost ? 'BACA' : nearNpc ? 'BICARA' : 'PERIKSA'}
+                </span>
+              </motion.button>
+
+              {/* JURUS / ATTACK BUTTON */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  if ('vibrate' in navigator) navigator.vibrate?.(15);
                   if (!playerRef.current.isGrounded && playerRef.current.z > 10) {
                     triggerGroundPound();
                   } else {
                     triggerActivePower();
                   }
                 }}
-                className={`relative w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full bg-gradient-to-br ${activePowerConfig.gradient} text-slate-950 font-black text-xs shadow-2xl border-3 border-white ring-4 ring-amber-400/40 flex flex-col items-center justify-center active:scale-95 cursor-pointer`}
-                title={`${activePowerConfig.name} [F / J / ◯]`}
+                className={`relative w-12 h-12 sm:w-15 sm:h-15 rounded-2xl bg-gradient-to-br ${activePowerConfig.gradient} text-slate-950 font-black text-xs shadow-2xl border-2 sm:border-3 border-white ring-2 ring-amber-400/40 flex flex-col items-center justify-center active:scale-95 cursor-pointer`}
+                title={`${activePowerConfig.name}`}
               >
-                {graphicSettings?.dualshockPrompts && (
-                  <span className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-600 text-white font-black text-[11px] flex items-center justify-center border-2 border-white shadow-lg font-game">
-                    ◯
-                  </span>
-                )}
-                <span className="text-xl">{activePowerConfig.emoji}</span>
-                <span className="font-game text-[8px] uppercase font-black mt-0.5 truncate max-w-[54px] text-center">
-                  {activePowerConfig.name.split(' ')[0]}
+                <span className="text-base sm:text-lg">{activePowerConfig.emoji}</span>
+                <span className="font-game text-[7px] sm:text-[8px] uppercase font-black truncate max-w-[46px] text-center">
+                  JURUS
                 </span>
               </motion.button>
 
-              {/* Interact Button (PS3 Cross ✕) */}
+              {/* JUMP BUTTON (BIGGEST & MOST ACCESSIBLE) */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={triggerInteraction}
-                className={`relative w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full flex flex-col items-center justify-center font-bold text-xs shadow-2xl transition-all border-3 cursor-pointer ${
-                  nearDoorPortal || nearKnowledgePost || nearVocab || nearNpc || nearMiniGameGate
-                    ? 'bg-amber-400 text-slate-950 border-white ring-4 ring-amber-300 animate-pulse'
-                    : 'bg-slate-900/70 text-slate-300 border-slate-700'
-                }`}
-                title="Aksi Periksa [E / ✕]"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  if ('vibrate' in navigator) navigator.vibrate?.(15);
+                  triggerJump();
+                }}
+                className="relative w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-700 text-white font-bold text-xs shadow-2xl border-3 border-white ring-3 ring-emerald-400/60 flex flex-col items-center justify-center active:scale-90 cursor-pointer"
+                title="Lompat"
+                aria-label="Lompat"
               >
-                {graphicSettings?.dualshockPrompts && (
-                  <span className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center border-2 border-white shadow-lg font-game">
-                    ✕
-                  </span>
-                )}
-                <span className="text-xl">
-                  {nearDoorPortal ? '🚪' : nearKnowledgePost ? '📖' : nearNpc ? '💬' : '🔍'}
-                </span>
-                <span className="font-game text-[9px] uppercase font-black mt-0.5">
-                  {nearDoorPortal ? 'MASUK' : nearKnowledgePost ? 'BACA' : nearNpc ? 'BICARA' : 'PERIKSA'}
-                </span>
-              </motion.button>
-
-              {/* Jump Button (PS3 Triangle △) */}
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={triggerJump}
-                className="relative w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full bg-slate-900/80 text-white font-bold text-xs shadow-2xl border-3 border-slate-700 flex flex-col items-center justify-center active:scale-95 cursor-pointer hover:border-emerald-400"
-                title="Lompat [Spasi / W / △]"
-              >
-                {graphicSettings?.dualshockPrompts && (
-                  <span className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center border-2 border-white shadow-lg font-game">
-                    △
-                  </span>
-                )}
-                <span className="text-xl">🦘</span>
-                <span className="font-game text-[9px] uppercase font-black mt-0.5">LOMPAT</span>
+                <span className="text-xl sm:text-2xl">🦘</span>
+                <span className="font-game text-[7.5px] sm:text-[8.5px] uppercase font-black">LOMPAT</span>
               </motion.button>
             </div>
           </div>

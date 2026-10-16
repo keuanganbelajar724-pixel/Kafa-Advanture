@@ -68,114 +68,115 @@ export const HUD: React.FC<HUDProps> = ({
       {/* ======================================================== */}
       {/* TOP BAR: Sleek, non-intrusive Game HUD */}
       {/* ======================================================== */}
-      <div className="flex items-center justify-between w-full pointer-events-auto gap-2">
-        {/* TOP LEFT: Level Badge & Sleek XP Progress */}
-        <div className="flex items-center gap-2.5 bg-slate-950/85 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/10 shadow-xl">
-          <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xs font-game shadow">
-            {currentLevel.id}
+      <div className="flex flex-col gap-1.5 w-full pointer-events-auto">
+        <div className="flex items-center justify-between w-full gap-1.5 sm:gap-2">
+          {/* TOP LEFT: Level Badge & Sleek XP Progress */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 bg-slate-950/85 backdrop-blur-md px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-2xl border border-white/10 shadow-xl shrink-0">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-[11px] sm:text-xs font-game shadow shrink-0">
+              {currentLevel.id}
+            </div>
+
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between gap-1 sm:gap-3 text-[9px] sm:text-[11px] font-bold text-slate-200 font-game">
+                <span className="truncate max-w-[65px] xs:max-w-[100px] sm:max-w-none">{currentLevel.nameId}</span>
+                <span className="text-amber-300 tabular-nums text-[8px] sm:text-[10px]">{saveData.xp}/{saveData.maxXp} XP</span>
+              </div>
+              {/* Rounded XP progress track */}
+              <div className="w-14 xs:w-20 md:w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-0.5 border border-slate-700/60">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full transition-all duration-300"
+                  style={{ width: `${xpPercent}%` }}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between gap-3 text-[11px] font-bold text-slate-200 font-game">
-              <span>{currentLevel.nameId}</span>
-              <span className="text-amber-300 tabular-nums text-[10px]">{saveData.xp}/{saveData.maxXp} XP</span>
-            </div>
-            {/* Rounded XP progress track */}
-            <div className="w-24 md:w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-0.5 border border-slate-700/60">
-              <div
-                className="h-full bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full transition-all duration-300"
-                style={{ width: `${xpPercent}%` }}
-              />
-            </div>
+          {/* 5 SD Subjects Badge in Top Bar (Desktop) */}
+          <div className="hidden lg:flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 shadow-xl text-amber-300 font-bold text-xs font-game">
+            <span>🤖</span>
+            <span className="text-[11px] font-black text-amber-300">5 MAPEL SD:</span>
+            <span className="text-white text-xs tracking-wider">🇮🇩 📐 🔬 🇬🇧 🕌</span>
           </div>
-        </div>
 
-        {/* 5 SD Subjects Badge in Top Bar */}
-        <div className="hidden lg:flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 shadow-xl text-amber-300 font-bold text-xs font-game">
-          <span>🤖</span>
-          <span className="text-[11px] font-black text-amber-300">5 MAPEL SD:</span>
-          <span className="text-white text-xs tracking-wider">🇮🇩 📐 🔬 🇬🇧 🕌</span>
-        </div>
-
-        {/* TOP RIGHT: MUTE, Farm, Energy, Coins, and Menu */}
-        <div className="flex items-center gap-1.5 md:gap-2">
-          {/* DEDICATED MUTE BUTTON (Top Bar Accessibility) */}
-          <button
-            onClick={handleToggleMute}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-2xl border font-game font-black text-xs cursor-pointer shadow-lg active:scale-95 transition-all ${
-              isMuted
-                ? 'bg-rose-600 border-rose-400 text-white animate-pulse'
-                : 'bg-sky-600/90 hover:bg-sky-500 border-sky-400 text-white'
-            }`}
-            title={isMuted ? 'Buka Suara (Unmute)' : 'Matikan Suara (Mute)'}
-          >
-            <span>{isMuted ? '🔇' : '🔊'}</span>
-            <span className="hidden sm:inline text-[10px]">{isMuted ? 'BISU' : 'SUARA'}</span>
-          </button>
-
-          {/* BUKU PINTAR SD & KNOWLEDGE QUICK BUTTON */}
-          {onOpenWords && (
+          {/* TOP RIGHT: MUTE, Farm, Energy, Coins, and Menu */}
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+            {/* DEDICATED MUTE BUTTON (Top Bar Accessibility) */}
             <button
-              onClick={() => {
-                audio.playButtonClick();
-                onOpenWords();
-              }}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 text-indigo-200 hover:text-white rounded-2xl border border-indigo-400/50 shadow-xl font-game font-black text-xs cursor-pointer active:scale-95 transition-all group"
-              title="Buka Buku Pintar & Kamus Pengetahuan SD"
-            >
-              <span className="text-sm group-hover:scale-110 transition-transform">📖</span>
-              <span className="hidden xs:inline text-[10px] tracking-wider">BUKU SD</span>
-            </button>
-          )}
-
-          {/* 11 MINI GAMES HUB QUICK BUTTON */}
-          {onOpenMiniGames && (
-            <button
-              onClick={() => {
-                audio.playButtonClick();
-                onOpenMiniGames();
-              }}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-fuchsia-600/80 hover:bg-fuchsia-500 text-fuchsia-100 hover:text-white rounded-2xl border border-fuchsia-400/50 shadow-xl font-game font-black text-xs cursor-pointer active:scale-95 transition-all group"
-              title="Main 11 Mini-Game Tantangan Pengetahuan SD"
-            >
-              <span className="text-sm group-hover:scale-110 transition-transform">🎮</span>
-              <span className="hidden xs:inline text-[10px] tracking-wider">MINIGAME</span>
-            </button>
-          )}
-
-          {/* HARVEST MOON FARM QUICK BUTTON */}
-          {onOpenFarm && (
-            <button
-              onClick={() => {
-                audio.playButtonClick();
-                onOpenFarm();
-              }}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-orange-500/20 hover:from-amber-500/30 text-amber-300 rounded-2xl border border-amber-400/50 shadow-xl font-game font-black text-xs cursor-pointer active:scale-95 transition-all group"
-              title="Pergi ke Kebun Harvest Moon Robot"
-            >
-              <span className="text-sm group-hover:scale-110 transition-transform">🚜</span>
-              <span className="hidden xs:inline text-[10px] tracking-wider">KEBUN</span>
-            </button>
-          )}
-
-          {/* Clean Background Toggle Button */}
-          {onToggleCleanBackground && (
-            <button
-              onClick={() => {
-                audio.playButtonClick();
-                onToggleCleanBackground();
-              }}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-2xl border font-game font-black text-xs cursor-pointer active:scale-95 transition-all ${
-                saveData.graphicSettings?.cleanBackgroundMode
-                  ? 'bg-emerald-600 text-white border-white shadow'
-                  : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:text-white'
+              onClick={handleToggleMute}
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-2xl border font-game font-black text-[10px] sm:text-xs cursor-pointer shadow-lg active:scale-95 transition-all ${
+                isMuted
+                  ? 'bg-rose-600 border-rose-400 text-white animate-pulse'
+                  : 'bg-sky-600/90 hover:bg-sky-500 border-sky-400 text-white'
               }`}
-              title="Latar Bersih / Tenang (Uncluttered View)"
+              title={isMuted ? 'Buka Suara (Unmute)' : 'Matikan Suara (Mute)'}
             >
-              <span>🌿</span>
-              <span className="hidden sm:inline text-[10px]">LATAR BERSIH</span>
+              <span>{isMuted ? '🔇' : '🔊'}</span>
+              <span className="hidden md:inline text-[10px]">{isMuted ? 'BISU' : 'SUARA'}</span>
             </button>
-          )}
+
+            {/* BUKU PINTAR SD & KNOWLEDGE QUICK BUTTON */}
+            {onOpenWords && (
+              <button
+                onClick={() => {
+                  audio.playButtonClick();
+                  onOpenWords();
+                }}
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-indigo-600/80 hover:bg-indigo-500 text-indigo-200 hover:text-white rounded-2xl border border-indigo-400/50 shadow-xl font-game font-black text-[10px] sm:text-xs cursor-pointer active:scale-95 transition-all group"
+                title="Buka Buku Pintar & Kamus Pengetahuan SD"
+              >
+                <span className="text-xs sm:text-sm group-hover:scale-110 transition-transform">📖</span>
+                <span className="hidden xs:inline text-[9px] sm:text-[10px] tracking-wider">BUKU SD</span>
+              </button>
+            )}
+
+            {/* 11 MINI GAMES HUB QUICK BUTTON */}
+            {onOpenMiniGames && (
+              <button
+                onClick={() => {
+                  audio.playButtonClick();
+                  onOpenMiniGames();
+                }}
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-fuchsia-600/80 hover:bg-fuchsia-500 text-fuchsia-100 hover:text-white rounded-2xl border border-fuchsia-400/50 shadow-xl font-game font-black text-[10px] sm:text-xs cursor-pointer active:scale-95 transition-all group"
+                title="Main 11 Mini-Game Tantangan Pengetahuan SD"
+              >
+                <span className="text-xs sm:text-sm group-hover:scale-110 transition-transform">🎮</span>
+                <span className="hidden xs:inline text-[9px] sm:text-[10px] tracking-wider">MINIGAME</span>
+              </button>
+            )}
+
+            {/* HARVEST MOON FARM QUICK BUTTON */}
+            {onOpenFarm && (
+              <button
+                onClick={() => {
+                  audio.playButtonClick();
+                  onOpenFarm();
+                }}
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-orange-500/20 hover:from-amber-500/30 text-amber-300 rounded-2xl border border-amber-400/50 shadow-xl font-game font-black text-[10px] sm:text-xs cursor-pointer active:scale-95 transition-all group"
+                title="Pergi ke Kebun Harvest Moon Robot"
+              >
+                <span className="text-xs sm:text-sm group-hover:scale-110 transition-transform">🚜</span>
+                <span className="hidden xs:inline text-[9px] sm:text-[10px] tracking-wider">KEBUN</span>
+              </button>
+            )}
+
+            {/* Clean Background Toggle Button */}
+            {onToggleCleanBackground && (
+              <button
+                onClick={() => {
+                  audio.playButtonClick();
+                  onToggleCleanBackground();
+                }}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-2xl border font-game font-black text-xs cursor-pointer active:scale-95 transition-all ${
+                  saveData.graphicSettings?.cleanBackgroundMode
+                    ? 'bg-emerald-600 text-white border-white shadow'
+                    : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:text-white'
+                }`}
+                title="Latar Bersih / Tenang (Uncluttered View)"
+              >
+                <span>🌿</span>
+                <span className="hidden sm:inline text-[10px]">LATAR BERSIH</span>
+              </button>
+            )}
 
           {/* Star Energy / SP Gauge (Hero is immortal) */}
           <div className="hidden sm:flex items-center gap-2 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-amber-400/40 shadow-xl">
@@ -263,6 +264,34 @@ export const HUD: React.FC<HUDProps> = ({
         </div>
       </div>
 
+        {/* MOBILE SMARTPHONE COMPACT QUEST CAPSULE (ZERO OVERLAP WITH BOTTOM TOUCH CONTROLS) */}
+        {!isMissionCompleted && currentStep && (
+          <div className="sm:hidden w-full flex items-center justify-between gap-1.5 px-2.5 py-1 bg-slate-950/90 backdrop-blur-md rounded-2xl border border-amber-400/50 shadow-lg text-white">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-base shrink-0">{targetItem ? targetItem.emoji : '🎯'}</span>
+              <div className="flex flex-col min-w-0">
+                <div className="text-[10px] font-black text-amber-300 font-game truncate">
+                  Target: {targetItem ? `${targetItem.word} = ${targetItem.translation}` : 'Temukan Benda'}
+                </div>
+                <div className="text-[8.5px] text-slate-300 truncate max-w-[200px]">
+                  "{currentStep.speechText}"
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                audio.speak(currentStep.speechText);
+              }}
+              className="px-2 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[9px] font-game shrink-0 flex items-center gap-1 cursor-pointer active:scale-95 shadow"
+              title="Dengarkan Suara"
+            >
+              <span>🔊</span>
+              <span>Suara</span>
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* ======================================================== */}
       {/* BOTTOM AREA: Floating Immersive Game Dock */}
       {/* ======================================================== */}
@@ -295,8 +324,8 @@ export const HUD: React.FC<HUDProps> = ({
           </span>
         </div>
 
-        {/* BOTTOM CENTER: Sleek Floating Quest Dialogue Card with Bilingual Indonesian Translation */}
-        <div className="w-full max-w-lg mx-auto pointer-events-auto flex flex-col items-center gap-1.5">
+        {/* BOTTOM CENTER: Sleek Floating Quest Dialogue Card (Desktop & Tablet only to avoid obstructing phone thumb controls) */}
+        <div className="hidden sm:flex w-full max-w-lg mx-auto pointer-events-auto flex-col items-center gap-1.5">
           {/* Target Word Chips (with English = Indonesian) */}
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             {missionTargets.map((m) => (
