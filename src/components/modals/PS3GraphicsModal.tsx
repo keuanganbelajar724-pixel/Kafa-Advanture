@@ -149,8 +149,73 @@ export const PS3GraphicsModal: React.FC<PS3GraphicsModalProps> = ({
             {/* Individual Graphics Toggles */}
             <div className="space-y-2.5 pt-2">
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 font-game">
-                Detail Efek Grafis & Kejernihan Visual:
+                Ukuran Kamera & Detail Grafis:
               </h4>
+
+              {/* Kamera & Ukuran Pandangan (Field of View / Scale) */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-slate-900/60 border border-cyan-400/40 shadow-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">🔍</span>
+                    <div>
+                      <div className="font-bold text-cyan-300 font-game text-xs md:text-sm flex items-center gap-1.5">
+                        <span>Ukuran Kamera & Jangkauan Pandang</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">GAME KEREN ✦</span>
+                      </div>
+                      <div className="text-[11px] text-slate-300">
+                        Atur zoom kamera agar karakter & benda tidak terlalu besar atau penuh
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <button
+                    onClick={() => {
+                      audio.playButtonClick();
+                      onUpdateSettings({ ...settings, cameraZoom: 'wide' });
+                    }}
+                    className={`py-2 px-1.5 rounded-xl text-center font-game font-bold text-xs border transition-all cursor-pointer ${
+                      (settings.cameraZoom || 'wide') === 'wide'
+                        ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-md ring-2 ring-cyan-400/30'
+                        : 'bg-slate-900/80 border-slate-700 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <div>LUAS ✦</div>
+                    <div className="text-[9px] opacity-75 font-normal">Keren & Ramping</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      audio.playButtonClick();
+                      onUpdateSettings({ ...settings, cameraZoom: 'standard' });
+                    }}
+                    className={`py-2 px-1.5 rounded-xl text-center font-game font-bold text-xs border transition-all cursor-pointer ${
+                      settings.cameraZoom === 'standard'
+                        ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-md ring-2 ring-cyan-400/30'
+                        : 'bg-slate-900/80 border-slate-700 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <div>STANDAR</div>
+                    <div className="text-[9px] opacity-75 font-normal">Seimbang</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      audio.playButtonClick();
+                      onUpdateSettings({ ...settings, cameraZoom: 'close' });
+                    }}
+                    className={`py-2 px-1.5 rounded-xl text-center font-game font-bold text-xs border transition-all cursor-pointer ${
+                      settings.cameraZoom === 'close'
+                        ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-md ring-2 ring-cyan-400/30'
+                        : 'bg-slate-900/80 border-slate-700 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <div>DEKAT</div>
+                    <div className="text-[9px] opacity-75 font-normal">Lebih Besar</div>
+                  </button>
+                </div>
+              </div>
 
               {/* Toggle 0: Mode Latar Bersih & Jernih (Fokus Bermain) */}
               <div

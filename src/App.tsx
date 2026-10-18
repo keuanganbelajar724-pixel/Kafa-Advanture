@@ -77,6 +77,7 @@ export default function App() {
 
   const handleInteractVocab = React.useCallback((item: any) => {
     discoverWord(item);
+    setActiveVocabModal(item);
   }, [discoverWord]);
 
   const handleInteractNpc = React.useCallback(() => {
@@ -187,6 +188,7 @@ export default function App() {
                 onInteractVocab={handleInteractVocab}
                 onCollectCoin={handleCollectCoin}
                 onCollectStar={handleCollectStar}
+                onUpdateCharacter={updateCharacter}
                 onExitRoom={() => {
                   audio.playDoorClose();
                   setActiveRoom(null);
@@ -218,6 +220,23 @@ export default function App() {
             onOpenWords={() => setCurrentScreen('VOCAB_COLLECTION')}
             onOpenBadges={() => setCurrentScreen('BADGES')}
             onOpenMiniGames={handleOpenMiniGames}
+            onEnterRoom={handleEnterRoom}
+            onToggleCameraZoom={() => {
+              const current = saveData.graphicSettings?.cameraZoom || 'wide';
+              const next = current === 'wide' ? 'standard' : current === 'standard' ? 'close' : 'wide';
+              updateGraphicSettings({
+                ...(saveData.graphicSettings || DEFAULT_PS3_GRAPHICS),
+                cameraZoom: next,
+              });
+              audio.playPowerUp();
+              showToast(
+                next === 'wide'
+                  ? '🔍 Kamera: Luas (Game Keren ✦)'
+                  : next === 'standard'
+                  ? '🔍 Kamera: Standar'
+                  : '🔍 Kamera: Dekat'
+              );
+            }}
             onToggleMusic={toggleMusic}
             onToggleSfx={toggleSfx}
           />
@@ -359,6 +378,7 @@ export default function App() {
           onOpenBadges={() => setCurrentScreen('BADGES')}
           onOpenMiniGames={() => setActiveMiniGame('FIND_IT')}
           onOpenPS3Graphics={() => setShowPS3GraphicsModal(true)}
+          onEnterRoom={handleEnterRoom}
           onToggleMusic={toggleMusic}
           onToggleSfx={toggleSfx}
           onToggleLanguage={toggleLanguageMode}

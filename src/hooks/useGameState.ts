@@ -36,7 +36,7 @@ const DEFAULT_SAVE: PlayerSaveData = {
   hearts: 3, // legacy
   energy: 100,
   maxEnergy: 100,
-  activePower: 'star_blast',
+  activePower: 'sahabat_kafa',
   unlockedPowers: ALL_HERO_POWER_IDS,
   currentLevelId: 1,
   unlockedLevelIds: [1, 2, 3, 4, 5, 6, 7],

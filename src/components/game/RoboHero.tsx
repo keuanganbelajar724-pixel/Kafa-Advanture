@@ -10,6 +10,8 @@ export interface RoboHeroProps {
   state: 'idle' | 'walking' | 'running' | 'jumping' | 'celebrating';
   facing: 'left' | 'right';
   jumpZ: number;
+  isPowerActive?: boolean;
+  isSahabatKafaBuff?: boolean;
 }
 
 export const RoboHero: React.FC<RoboHeroProps> = ({
@@ -19,6 +21,8 @@ export const RoboHero: React.FC<RoboHeroProps> = ({
   state,
   facing,
   jumpZ,
+  isPowerActive = false,
+  isSahabatKafaBuff = false,
 }) => {
   const isWalking = state === 'walking' || state === 'running';
   const isJumping = state === 'jumping' || jumpZ > 2;
@@ -37,6 +41,25 @@ export const RoboHero: React.FC<RoboHeroProps> = ({
         transform: `translateY(-${jumpZ}px)`,
       }}
     >
+      {/* SAHABAT KAFA CELESTIAL CROWN & ENERGY AURA */}
+      {(isSahabatKafaBuff || isPowerActive) && (
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-30 select-none">
+          {/* Glowing Divine Golden Crown with Floating Animation */}
+          <motion.div
+            animate={{ y: [-3, 3, -3], scale: [1, 1.08, 1], rotate: [-2, 2, -2] }}
+            transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+            className="flex flex-col items-center"
+          >
+            <div className="text-2xl filter drop-shadow-[0_0_12px_rgba(245,158,11,1)]">👑</div>
+            <div className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 font-black text-[7px] tracking-wider uppercase shadow-md border border-yellow-100 font-game whitespace-nowrap">
+              SAHABAT KAFA
+            </div>
+          </motion.div>
+          {/* Golden Pulse Shockwave Ring */}
+          <div className="absolute top-2 w-16 h-8 rounded-full border-2 border-amber-300/80 shadow-[0_0_20px_rgba(245,158,11,0.9)] animate-ping opacity-60" />
+        </div>
+      )}
+
       {/* Ultra-Smooth GPU-Composited Robot Body Animation */}
       <div
         className={`will-change-transform ${
@@ -50,7 +73,7 @@ export const RoboHero: React.FC<RoboHeroProps> = ({
             : undefined
         }
       >
-        <svg width="114" height="144" viewBox="0 0 114 144" fill="none" className="filter drop-shadow-2xl overflow-visible">
+        <svg width="98" height="124" viewBox="0 0 114 144" fill="none" className="filter drop-shadow-2xl overflow-visible">
           {/* DEFINITIONS & GRADIENTS FOR HIGH-TECH METALLIC ROBOT SHADING */}
           <defs>
             <linearGradient id="chassisGrad" x1="0%" y1="0%" x2="100%" y2="100%">

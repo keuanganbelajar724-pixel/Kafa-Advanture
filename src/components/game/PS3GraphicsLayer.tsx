@@ -23,6 +23,7 @@ export const DEFAULT_PS3_GRAPHICS: PS3GraphicSettings = {
   cinematicVignette: true,
   dualshockPrompts: true,
   highDefShadows: true,
+  cameraZoom: 'wide',
 };
 
 export const PS3GraphicsLayer: React.FC<PS3GraphicsLayerProps> = ({
@@ -68,12 +69,26 @@ export const PS3GraphicsLayer: React.FC<PS3GraphicsLayerProps> = ({
           ambientTint: 'bg-gradient-to-b from-rose-500/5 via-transparent to-black/15',
         };
       case 5: // Safari Fauna
-      default:
         return {
           rayColor: 'from-amber-400/20 via-orange-300/5 to-transparent',
           bokehColors: ['bg-amber-400/25', 'bg-orange-400/25', 'bg-yellow-200/20'],
           particleEmoji: ['🍃', '✨', '🌟', '🌾'],
           ambientTint: 'bg-gradient-to-b from-amber-600/5 via-transparent to-black/20',
+        };
+      case 6: // Crystal Cavern
+        return {
+          rayColor: 'from-cyan-300/25 via-fuchsia-300/10 to-transparent',
+          bokehColors: ['bg-cyan-300/30', 'bg-fuchsia-400/25', 'bg-purple-300/25'],
+          particleEmoji: ['💎', '✨', '🔷', '⭐'],
+          ambientTint: 'bg-gradient-to-b from-indigo-950/20 via-transparent to-black/25',
+        };
+      case 7: // Cosmic Space
+      default:
+        return {
+          rayColor: 'from-violet-400/25 via-pink-300/10 to-transparent',
+          bokehColors: ['bg-violet-400/30', 'bg-pink-400/25', 'bg-amber-300/20'],
+          particleEmoji: ['🚀', '✨', '🌟', '🪐'],
+          ambientTint: 'bg-gradient-to-b from-purple-950/25 via-transparent to-black/30',
         };
     }
   };

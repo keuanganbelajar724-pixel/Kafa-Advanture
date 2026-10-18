@@ -195,6 +195,41 @@ class AudioEngine {
     });
   }
 
+  public playSahabatKafaPower() {
+    if (!this.sfxEnabled || this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    // Royal Sahabat Kafa heroic arpeggio (C5, E5, G5, C6, G6) with celestial shine
+    const arpeggio = [
+      { f: 523.25, time: 0, dur: 0.22, vol: 0.18, type: 'triangle' as OscillatorType },
+      { f: 659.25, time: 0.08, dur: 0.22, vol: 0.20, type: 'triangle' as OscillatorType },
+      { f: 783.99, time: 0.16, dur: 0.25, vol: 0.22, type: 'triangle' as OscillatorType },
+      { f: 1046.50, time: 0.24, dur: 0.45, vol: 0.25, type: 'sine' as OscillatorType },
+      { f: 1318.51, time: 0.32, dur: 0.55, vol: 0.22, type: 'sine' as OscillatorType },
+      { f: 1567.98, time: 0.40, dur: 0.75, vol: 0.26, type: 'sine' as OscillatorType },
+      { f: 2093.00, time: 0.48, dur: 0.95, vol: 0.20, type: 'sine' as OscillatorType },
+    ];
+
+    arpeggio.forEach(n => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = n.type;
+      osc.frequency.setValueAtTime(n.f, now + n.time);
+
+      gain.gain.setValueAtTime(n.vol, now + n.time);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now + n.time);
+      osc.stop(now + n.time + n.dur);
+    });
+  }
+
   public playTrophyUnlock() {
     if (!this.sfxEnabled || this.isMuted) return;
     this.initContext();
@@ -861,6 +896,71 @@ class AudioEngine {
       gain.connect(this.ctx!.destination);
       osc.start(now + idx * 0.08);
       osc.stop(now + idx * 0.08 + 0.25);
+    });
+  }
+
+  public playKickBall() {
+    if (!this.sfxEnabled || this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.12);
+  }
+
+  public playJukeboxTune(trackId: number = 1) {
+    if (!this.sfxEnabled || this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    const tunes = [
+      [
+        { f: 261.63, t: 0, d: 0.12, type: 'square' },
+        { f: 329.63, t: 0.12, d: 0.12, type: 'square' },
+        { f: 392.00, t: 0.24, d: 0.12, type: 'square' },
+        { f: 523.25, t: 0.36, d: 0.24, type: 'square' },
+        { f: 440.00, t: 0.60, d: 0.15, type: 'triangle' },
+        { f: 523.25, t: 0.75, d: 0.35, type: 'sine' },
+      ],
+      [
+        { f: 392.00, t: 0, d: 0.14, type: 'triangle' },
+        { f: 523.25, t: 0.14, d: 0.14, type: 'square' },
+        { f: 659.25, t: 0.28, d: 0.14, type: 'square' },
+        { f: 783.99, t: 0.42, d: 0.28, type: 'sine' },
+        { f: 659.25, t: 0.70, d: 0.14, type: 'square' },
+        { f: 783.99, t: 0.84, d: 0.45, type: 'sine' },
+      ],
+      [
+        { f: 440.00, t: 0, d: 0.22, type: 'sine' },
+        { f: 554.37, t: 0.1, d: 0.22, type: 'sine' },
+        { f: 659.25, t: 0.2, d: 0.35, type: 'sine' },
+        { f: 880.00, t: 0.35, d: 0.55, type: 'triangle' },
+      ]
+    ];
+
+    const track = tunes[(trackId - 1) % tunes.length];
+    track.forEach(note => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = note.type as OscillatorType;
+      osc.frequency.setValueAtTime(note.f, now + note.t);
+      gain.gain.setValueAtTime(0.16, now + note.t);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + note.t + note.d);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + note.t);
+      osc.stop(now + note.t + note.d);
     });
   }
 

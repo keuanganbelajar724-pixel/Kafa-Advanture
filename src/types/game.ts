@@ -123,7 +123,7 @@ export interface PlayerPhysics {
   isGrounded: boolean;
 }
 
-export type WordCategory = 'home' | 'school' | 'food' | 'animals' | 'nature' | 'city';
+export type WordCategory = 'home' | 'school' | 'food' | 'animals' | 'nature' | 'city' | 'tools' | 'space';
 
 export interface VocabItem {
   id: string;
@@ -248,6 +248,7 @@ export interface LevelEnemy {
 }
 
 export type HeroPowerType =
+  | 'sahabat_kafa'    // 👑 Jurus Sahabat Kafa Power (Flagship)
   | 'star_blast'      // ⚡ Tembakan Bintang Beruntun
   | 'tornado_spin'    // 🌪️ Topan Badai Putar
   | 'fire_dragon'     // 🔥 Bola Api Naga
@@ -274,7 +275,7 @@ export interface PlayerProjectile {
   z: number;
   vx: number;
   vy?: number;
-  type: 'star_blast' | 'fire_dragon' | 'tornado_spin' | 'cosmic_nova';
+  type: 'star_blast' | 'fire_dragon' | 'tornado_spin' | 'cosmic_nova' | 'sahabat_kafa';
   createdAt: number;
   piercing?: boolean;
   radius?: number;
@@ -318,7 +319,7 @@ export interface RoomConfig {
   nameId: string;
   subtitle: string;
   subtitleId: string;
-  theme: 'bedroom' | 'classroom' | 'cabin' | 'attic';
+  theme: 'bedroom' | 'classroom' | 'cabin' | 'attic' | 'cafe' | 'lab' | 'treehouse';
   width: number;
   minY: number;
   maxY: number;
@@ -431,6 +432,7 @@ export interface PS3GraphicSettings {
   cinematicVignette: boolean;
   dualshockPrompts: boolean;
   highDefShadows: boolean;
+  cameraZoom?: 'wide' | 'standard' | 'close';
 }
 
 export interface PS3TrophyNotification {

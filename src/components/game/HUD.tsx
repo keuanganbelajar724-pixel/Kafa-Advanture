@@ -18,6 +18,8 @@ interface HUDProps {
   onOpenWords?: () => void;
   onOpenBadges?: () => void;
   onOpenMiniGames?: () => void;
+  onEnterRoom?: (roomId: string) => void;
+  onToggleCameraZoom?: () => void;
   onToggleMusic?: () => void;
   onToggleSfx?: () => void;
 }
@@ -33,9 +35,14 @@ export const HUD: React.FC<HUDProps> = ({
   onToggleCleanBackground,
   onSelectPower,
   onOpenWords,
+  onOpenBadges,
   onOpenMiniGames,
+  onEnterRoom,
+  onToggleCameraZoom,
 }) => {
   const [isMuted, setIsMuted] = useState<boolean>(() => audio.getIsMuted());
+  const [showStoryDetails, setShowStoryDetails] = useState<boolean>(false);
+  const [showRoomDropdown, setShowRoomDropdown] = useState<boolean>(false);
 
   const handleToggleMute = () => {
     const next = audio.toggleMute();
@@ -44,7 +51,7 @@ export const HUD: React.FC<HUDProps> = ({
 
   const xpPercent = Math.min(100, Math.floor((saveData.xp / saveData.maxXp) * 100));
   const energyPercent = Math.min(100, Math.max(0, saveData.energy !== undefined ? saveData.energy : 100));
-  const activePowerConfig = HERO_POWERS.find(p => p.id === (saveData.activePower || 'star_blast')) || HERO_POWERS[0];
+  const activePowerConfig = HERO_POWERS.find(p => p.id === (saveData.activePower || 'sahabat_kafa')) || HERO_POWERS[0];
 
   // Determine current active story step or target item
   const currentStep = currentLevel.storySteps?.find(
@@ -66,23 +73,23 @@ export const HUD: React.FC<HUDProps> = ({
   return (
     <div className="absolute top-0 left-0 right-0 p-3 md:p-5 pointer-events-none z-[800] flex flex-col justify-between h-full select-none">
       {/* ======================================================== */}
-      {/* TOP BAR: Sleek, non-intrusive Game HUD */}
+      {/* TOP BAR: Clean, Tidy, Non-Intrusive Game HUD */}
       {/* ======================================================== */}
-      <div className="flex flex-col gap-1.5 w-full pointer-events-auto">
-        <div className="flex items-center justify-between w-full gap-1.5 sm:gap-2">
-          {/* TOP LEFT: Level Badge & Sleek XP Progress */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 bg-slate-950/85 backdrop-blur-md px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-2xl border border-white/10 shadow-xl shrink-0">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-[11px] sm:text-xs font-game shadow shrink-0">
+      <div className="flex flex-col gap-1 w-full pointer-events-auto">
+        <div className="flex items-center justify-between w-full gap-2">
+          {/* TOP LEFT: Level Badge & XP Progress */}
+          <div className="flex items-center gap-2 bg-slate-950/85 backdrop-blur-md px-2.5 py-1.5 rounded-2xl border border-white/10 shadow-xl shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xs font-game shadow shrink-0">
               {currentLevel.id}
             </div>
 
             <div className="flex flex-col">
-              <div className="flex items-center justify-between gap-1 sm:gap-3 text-[9px] sm:text-[11px] font-bold text-slate-200 font-game">
-                <span className="truncate max-w-[65px] xs:max-w-[100px] sm:max-w-none">{currentLevel.nameId}</span>
-                <span className="text-amber-300 tabular-nums text-[8px] sm:text-[10px]">{saveData.xp}/{saveData.maxXp} XP</span>
+              <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-bold text-slate-200 font-game">
+                <span className="truncate max-w-[85px] xs:max-w-[130px] sm:max-w-none">{currentLevel.nameId}</span>
+                <span className="text-amber-300 tabular-nums text-[9px] sm:text-[10px]">{saveData.xp}/{saveData.maxXp} XP</span>
               </div>
               {/* Rounded XP progress track */}
-              <div className="w-14 xs:w-20 md:w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-0.5 border border-slate-700/60">
+              <div className="w-16 xs:w-24 md:w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-0.5 border border-slate-700/60">
                 <div
                   className="h-full bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full transition-all duration-300"
                   style={{ width: `${xpPercent}%` }}
@@ -91,321 +98,260 @@ export const HUD: React.FC<HUDProps> = ({
             </div>
           </div>
 
-          {/* 5 SD Subjects Badge in Top Bar (Desktop) */}
-          <div className="hidden lg:flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 shadow-xl text-amber-300 font-bold text-xs font-game">
-            <span>🤖</span>
-            <span className="text-[11px] font-black text-amber-300">5 MAPEL SD:</span>
-            <span className="text-white text-xs tracking-wider">🇮🇩 📐 🔬 🇬🇧 🕌</span>
+          {/* TOP CENTER: Consolidated Status Counters (Coins, Stars, Energy) */}
+          <div className="flex items-center gap-2 sm:gap-3 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 shadow-xl">
+            {/* Coins */}
+            <div className="flex items-center gap-1 text-amber-300 font-game font-black text-xs" title="Koin Emas">
+              <span>🪙</span>
+              <span className="tabular-nums">{saveData.coins}</span>
+            </div>
+
+            <div className="w-px h-3.5 bg-white/10" />
+
+            {/* Stars */}
+            <div className="flex items-center gap-1 text-yellow-300 font-game font-black text-xs" title="Bintang Petualangan">
+              <span>⭐</span>
+              <span className="tabular-nums">{saveData.stars}</span>
+            </div>
+
+            <div className="w-px h-3.5 bg-white/10 hidden xs:block" />
+
+            {/* Star Energy */}
+            <div className="hidden xs:flex items-center gap-1.5 text-cyan-300 font-game font-black text-xs" title="Energi Jurus Kafa">
+              <span className="animate-pulse">⚡</span>
+              <span className="tabular-nums text-[10px] sm:text-[11px]">{energyPercent}%</span>
+            </div>
           </div>
 
-          {/* TOP RIGHT: MUTE, Farm, Energy, Coins, and Menu */}
-          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
-            {/* DEDICATED MUTE BUTTON (Top Bar Accessibility) */}
+          {/* TOP RIGHT: Sleek Navigation Hubs & Settings */}
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* Dedicated Mute/Unmute Icon */}
             <button
               onClick={handleToggleMute}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-2xl border font-game font-black text-[10px] sm:text-xs cursor-pointer shadow-lg active:scale-95 transition-all ${
+              className={`w-8 h-8 rounded-xl flex items-center justify-center border font-game text-xs cursor-pointer shadow-lg active:scale-95 transition-all ${
                 isMuted
-                  ? 'bg-rose-600 border-rose-400 text-white animate-pulse'
-                  : 'bg-sky-600/90 hover:bg-sky-500 border-sky-400 text-white'
+                  ? 'bg-rose-600/90 border-rose-400 text-white animate-pulse'
+                  : 'bg-slate-900/90 hover:bg-slate-800 border-white/10 text-slate-200 hover:text-white'
               }`}
               title={isMuted ? 'Buka Suara (Unmute)' : 'Matikan Suara (Mute)'}
             >
               <span>{isMuted ? '🔇' : '🔊'}</span>
-              <span className="hidden md:inline text-[10px]">{isMuted ? 'BISU' : 'SUARA'}</span>
             </button>
 
-            {/* BUKU PINTAR SD & KNOWLEDGE QUICK BUTTON */}
+            {/* Buku Pintar SD */}
             {onOpenWords && (
               <button
                 onClick={() => {
                   audio.playButtonClick();
                   onOpenWords();
                 }}
-                className="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-indigo-600/80 hover:bg-indigo-500 text-indigo-200 hover:text-white rounded-2xl border border-indigo-400/50 shadow-xl font-game font-black text-[10px] sm:text-xs cursor-pointer active:scale-95 transition-all group"
-                title="Buka Buku Pintar & Kamus Pengetahuan SD"
+                className="h-8 px-2 sm:px-2.5 rounded-xl bg-indigo-600/80 hover:bg-indigo-500 text-white border border-indigo-400/40 shadow-lg font-game font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+                title="Buku Pintar SD"
               >
-                <span className="text-xs sm:text-sm group-hover:scale-110 transition-transform">📖</span>
-                <span className="hidden xs:inline text-[9px] sm:text-[10px] tracking-wider">BUKU SD</span>
+                <span>📖</span>
+                <span className="hidden sm:inline text-[10px]">BUKU</span>
               </button>
             )}
 
-            {/* 11 MINI GAMES HUB QUICK BUTTON */}
+            {/* 11 Mini-Game Hub */}
             {onOpenMiniGames && (
               <button
                 onClick={() => {
                   audio.playButtonClick();
                   onOpenMiniGames();
                 }}
-                className="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-fuchsia-600/80 hover:bg-fuchsia-500 text-fuchsia-100 hover:text-white rounded-2xl border border-fuchsia-400/50 shadow-xl font-game font-black text-[10px] sm:text-xs cursor-pointer active:scale-95 transition-all group"
-                title="Main 11 Mini-Game Tantangan Pengetahuan SD"
+                className="h-8 px-2 sm:px-2.5 rounded-xl bg-fuchsia-600/80 hover:bg-fuchsia-500 text-white border border-fuchsia-400/40 shadow-lg font-game font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+                title="11 Mini Game SD"
               >
-                <span className="text-xs sm:text-sm group-hover:scale-110 transition-transform">🎮</span>
-                <span className="hidden xs:inline text-[9px] sm:text-[10px] tracking-wider">MINIGAME</span>
+                <span>🎮</span>
+                <span className="hidden sm:inline text-[10px]">GAME</span>
               </button>
             )}
 
-            {/* HARVEST MOON FARM QUICK BUTTON */}
+            {/* Kebun Harvest Moon */}
             {onOpenFarm && (
               <button
                 onClick={() => {
                   audio.playButtonClick();
                   onOpenFarm();
                 }}
-                className="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-orange-500/20 hover:from-amber-500/30 text-amber-300 rounded-2xl border border-amber-400/50 shadow-xl font-game font-black text-[10px] sm:text-xs cursor-pointer active:scale-95 transition-all group"
-                title="Pergi ke Kebun Harvest Moon Robot"
+                className="h-8 px-2 sm:px-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 shadow-lg font-game font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+                title="Kebun Robot"
               >
-                <span className="text-xs sm:text-sm group-hover:scale-110 transition-transform">🚜</span>
-                <span className="hidden xs:inline text-[9px] sm:text-[10px] tracking-wider">KEBUN</span>
+                <span>🚜</span>
+                <span className="hidden sm:inline text-[10px]">KEBUN</span>
               </button>
             )}
 
-            {/* Clean Background Toggle Button */}
-            {onToggleCleanBackground && (
+            {/* 🔍 Zoom / Kamera Mode (Luas / Game Keren ✦, Standar, Dekat) */}
+            {onToggleCameraZoom && (
               <button
-                onClick={() => {
-                  audio.playButtonClick();
-                  onToggleCleanBackground();
-                }}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-2xl border font-game font-black text-xs cursor-pointer active:scale-95 transition-all ${
-                  saveData.graphicSettings?.cleanBackgroundMode
-                    ? 'bg-emerald-600 text-white border-white shadow'
-                    : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:text-white'
-                }`}
-                title="Latar Bersih / Tenang (Uncluttered View)"
+                onClick={onToggleCameraZoom}
+                className="h-8 px-2 sm:px-2.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-400/50 shadow-md font-game font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+                title="Atur Ukuran Kamera (Luas Game Keren / Standar / Dekat)"
               >
-                <span>🌿</span>
-                <span className="hidden sm:inline text-[10px]">LATAR BERSIH</span>
+                <span>🔍</span>
+                <span className="text-[10px] font-black uppercase">
+                  {saveData.graphicSettings?.cameraZoom === 'close'
+                    ? 'DEKAT'
+                    : saveData.graphicSettings?.cameraZoom === 'standard'
+                    ? 'STANDAR'
+                    : 'LUAS ✦'}
+                </span>
               </button>
             )}
 
-          {/* Star Energy / SP Gauge (Hero is immortal) */}
-          <div className="hidden sm:flex items-center gap-2 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-amber-400/40 shadow-xl">
-            <span className="text-base animate-pulse">⚡</span>
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between gap-2 text-[10px] font-black text-amber-300 font-game">
-                <span>ENERGI JURUS</span>
-                <span className="tabular-nums">{energyPercent}%</span>
-              </div>
-              <div className="w-16 sm:w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700/60 mt-0.5">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-400 via-yellow-300 to-cyan-400 rounded-full transition-all duration-200"
-                  style={{ width: `${energyPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Quick 6 Powers Switcher Toolbar */}
-          <div className="hidden md:flex items-center gap-1 bg-slate-950/85 backdrop-blur-md px-2 py-1 rounded-2xl border border-white/10 shadow-xl">
-            {HERO_POWERS.map((pow) => {
-              const isActive = (saveData.activePower || 'star_blast') === pow.id;
-              return (
+            {/* 🚪 Ruangan 3D Interaktif */}
+            {onEnterRoom && currentLevel.rooms && currentLevel.rooms.length > 0 && (
+              <div className="relative">
                 <button
-                  key={pow.id}
                   onClick={() => {
-                    audio.playButtonClick();
-                    if (onSelectPower) onSelectPower(pow.id);
+                    if (currentLevel.rooms!.length === 1) {
+                      audio.playDoorOpen();
+                      onEnterRoom(currentLevel.rooms![0].id);
+                    } else {
+                      setShowRoomDropdown(prev => !prev);
+                    }
                   }}
-                  className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs transition-all cursor-pointer relative group ${
-                    isActive
-                      ? `bg-gradient-to-br ${pow.gradient} text-slate-950 shadow-[0_0_12px_rgba(251,191,36,0.8)] scale-110 border-2 border-white font-black ring-2 ring-amber-400/50`
-                      : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:scale-105 border border-slate-700'
-                  }`}
-                  title={`${pow.name} [${pow.keyHint}]: ${pow.description}`}
+                  className="h-8 px-2 sm:px-2.5 rounded-xl bg-gradient-to-r from-amber-500/40 via-yellow-400/30 to-amber-600/40 hover:from-amber-500/50 hover:to-amber-600/50 text-amber-300 border-2 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.5)] font-game font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all ring-2 ring-amber-400/30 animate-pulse"
+                  title="Masuk ke Ruangan 3D Interaktif"
                 >
-                  <span>{pow.emoji}</span>
-                  <span className="absolute -bottom-7 whitespace-nowrap bg-slate-950 px-2 py-0.5 rounded text-[9px] font-bold text-amber-300 border border-amber-400/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                    {pow.name} ({pow.keyHint})
-                  </span>
+                  <span className="text-sm">🚪</span>
+                  <span className="text-[10px] sm:hidden font-black">3D</span>
+                  <span className="hidden sm:inline text-[10px]">RUANG 3D</span>
+                  {currentLevel.rooms.length > 1 && (
+                    <span className="text-[9px] bg-amber-400 text-slate-950 px-1 rounded-full font-black">
+                      {currentLevel.rooms.length}
+                    </span>
+                  )}
                 </button>
-              );
-            })}
-          </div>
 
-          {/* Coins Badge */}
-          <div className="flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1.5 rounded-2xl border border-white/10 shadow-md text-amber-300 font-bold text-xs font-game">
-            <span>🪙</span>
-            <span className="tabular-nums font-black">{saveData.coins}</span>
-          </div>
+                {/* Multiple Rooms Dropdown */}
+                {showRoomDropdown && currentLevel.rooms.length > 1 && (
+                  <div className="absolute top-10 right-0 w-52 bg-slate-950/95 backdrop-blur-md rounded-2xl border-2 border-amber-400 shadow-2xl p-2 z-[900] flex flex-col gap-1.5 animate-in fade-in">
+                    <div className="text-[9px] font-black font-game text-amber-300 px-2 py-0.5 border-b border-white/10 uppercase">
+                      PILIH RUANGAN 3D
+                    </div>
+                    {currentLevel.rooms.map(rm => (
+                      <button
+                        key={rm.id}
+                        onClick={() => {
+                          setShowRoomDropdown(false);
+                          audio.playDoorOpen();
+                          onEnterRoom(rm.id);
+                        }}
+                        className="w-full text-left px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-amber-400 hover:text-slate-950 text-white font-game text-xs font-bold transition-all flex items-center justify-between cursor-pointer"
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span>{rm.theme === 'bedroom' ? '🛏️' : rm.theme === 'attic' ? '🗝️' : rm.theme === 'classroom' ? '🏫' : rm.theme === 'cafe' ? '☕' : rm.theme === 'cabin' ? '🏡' : '🚪'}</span>
+                          <span className="truncate">{rm.nameId}</span>
+                        </div>
+                        <span className="text-[10px] shrink-0">▶</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* Stars Badge */}
-          <div className="hidden xs:flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2 py-1.5 rounded-2xl border border-white/10 shadow-md text-yellow-300 font-bold text-xs font-game">
-            <span>⭐</span>
-            <span className="tabular-nums font-black">{saveData.stars}</span>
-          </div>
-
-          {/* PS3 HD Graphics Mode Button */}
-          {onOpenPS3Graphics && (
+            {/* Menu Game */}
             <button
               onClick={() => {
                 audio.playButtonClick();
-                onOpenPS3Graphics();
+                onOpenMenu();
               }}
-              className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-amber-300 rounded-2xl border border-amber-400/50 shadow-xl font-game font-black text-xs cursor-pointer active:scale-95 transition-all"
-              title="Pengaturan Visual PS3 HD Remaster"
+              className="h-8 px-2.5 sm:px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-400/40 shadow-lg font-game font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+              title="Menu Game & Pengaturan"
             >
-              <span className="text-sm">🎮</span>
-              <span className="hidden xs:inline">PS3</span>
+              <span>☰</span>
+              <span className="hidden xs:inline text-[10px]">MENU</span>
             </button>
-          )}
-
-          {/* Modern Menu Toggle */}
-          <button
-            onClick={() => {
-              audio.playButtonClick();
-              onOpenMenu();
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white rounded-2xl border border-slate-700 shadow-xl font-game font-bold text-xs cursor-pointer active:scale-95 transition-all"
-            title="Buka Menu Game"
-          >
-            <span className="text-sm">☰</span>
-            <span className="hidden sm:inline">MENU</span>
-          </button>
+          </div>
         </div>
       </div>
 
-        {/* MOBILE SMARTPHONE COMPACT QUEST CAPSULE (ZERO OVERLAP WITH BOTTOM TOUCH CONTROLS) */}
-        {!isMissionCompleted && currentStep && (
-          <div className="sm:hidden w-full flex items-center justify-between gap-1.5 px-2.5 py-1 bg-slate-950/90 backdrop-blur-md rounded-2xl border border-amber-400/50 shadow-lg text-white">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-base shrink-0">{targetItem ? targetItem.emoji : '🎯'}</span>
-              <div className="flex flex-col min-w-0">
-                <div className="text-[10px] font-black text-amber-300 font-game truncate">
-                  Target: {targetItem ? `${targetItem.word} = ${targetItem.translation}` : 'Temukan Benda'}
-                </div>
-                <div className="text-[8.5px] text-slate-300 truncate max-w-[200px]">
-                  "{currentStep.speechText}"
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                audio.speak(currentStep.speechText);
-              }}
-              className="px-2 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[9px] font-game shrink-0 flex items-center gap-1 cursor-pointer active:scale-95 shadow"
-              title="Dengarkan Suara"
-            >
-              <span>🔊</span>
-              <span>Suara</span>
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* ======================================================== */}
-      {/* BOTTOM AREA: Floating Immersive Game Dock */}
+      {/* BOTTOM AREA: Sleek, Uncluttered Floating Game Dock */}
       {/* ======================================================== */}
-      <div className="w-full flex items-end justify-between gap-4 pointer-events-none mt-auto">
-        {/* BOTTOM LEFT: Keyboard Controls Pill */}
-        <div className="hidden md:flex items-center gap-2 bg-slate-950/85 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-lg text-[11px] font-game text-slate-300 pointer-events-auto">
-          <span className="text-amber-400 font-black flex items-center gap-1">
-            <span>🎮</span>
-            <span>KONTROL:</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-slate-800 rounded text-[9px] text-amber-300 font-bold border border-slate-700">SPASI</kbd> Lompat
-          </span>
+      <div className="w-full flex items-end justify-between gap-3 pointer-events-none mt-auto">
+        {/* BOTTOM LEFT: Minimal Keyboard Controls Guide */}
+        <div className="hidden lg:flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg text-[10px] font-game text-slate-300 pointer-events-auto">
+          <span className="text-amber-400 font-black">🎮</span>
+          <span><kbd className="px-1 py-0.2 bg-slate-800 rounded text-[9px] text-amber-300 border border-slate-700">SPASI</kbd> Lompat</span>
           <span>•</span>
-          <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-[9px] font-bold border border-cyan-500/40">SHIFT/Z</kbd> Sprint 🚀
-          </span>
+          <span><kbd className="px-1 py-0.2 bg-cyan-500/20 text-cyan-300 rounded text-[9px] border border-cyan-500/40">SHIFT</kbd> Lari</span>
           <span>•</span>
-          <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-amber-500/20 text-amber-300 rounded text-[9px] font-bold border border-amber-500/40">F/J</kbd>
-            <span className="text-amber-300 font-bold">{activePowerConfig.emoji} Jurus</span>
-          </span>
+          <span><kbd className="px-1 py-0.2 bg-amber-500/20 text-amber-300 rounded text-[9px] border border-amber-500/40">F/J</kbd> Jurus</span>
           <span>•</span>
-          <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-slate-800 rounded text-[9px] text-amber-300 border border-slate-700">1-6</kbd> Ganti
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-slate-800 rounded text-[9px] text-amber-300 font-bold border border-slate-700">E</kbd> Ambil
-          </span>
+          <span><kbd className="px-1 py-0.2 bg-slate-800 rounded text-[9px] text-amber-300 border border-slate-700">E</kbd> Aksi</span>
         </div>
 
-        {/* BOTTOM CENTER: Sleek Floating Quest Dialogue Card (Desktop & Tablet only to avoid obstructing phone thumb controls) */}
-        <div className="hidden sm:flex w-full max-w-lg mx-auto pointer-events-auto flex-col items-center gap-1.5">
-          {/* Target Word Chips (with English = Indonesian) */}
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            {missionTargets.map((m) => (
-              <div
-                key={m.id}
-                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black font-game border backdrop-blur-md shadow transition-all ${
-                  m.isDone
-                    ? 'bg-emerald-950/85 border-emerald-500 text-emerald-300'
-                    : m.isCurrent
-                    ? 'bg-amber-500/25 border-amber-400 text-amber-300 ring-2 ring-amber-400/40 animate-pulse'
-                    : 'bg-slate-900/80 border-slate-700/60 text-slate-400'
-                }`}
-              >
-                <span>{m.item?.emoji || '📦'}</span>
-                <span>{m.item ? `${m.item.word} = ${m.item.translation}` : 'BENDA'}</span>
-                <span>{m.isDone ? '✅' : m.isCurrent ? '🎯' : '🔒'}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Dialogue Card */}
-          <motion.div
-            initial={{ y: 15, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="w-full bg-slate-950/85 backdrop-blur-md rounded-2xl border border-white/10 p-2.5 md:p-3 shadow-2xl flex items-center justify-between gap-3 text-white"
-          >
-            {/* Speaking Icon */}
-            <div className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-lg shrink-0">
-              {targetItem ? targetItem.emoji : '🧭'}
-            </div>
-
-            {/* Dialogue Text */}
-            <div className="flex-1 text-left min-w-0">
-              {!isMissionCompleted && currentStep ? (
-                <div>
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/40">
-                      🇬🇧 Petualangan Inggris
+        {/* BOTTOM CENTER: Compact, Clean Quest Target Capsule (Non-intrusive) */}
+        <div className="w-full max-w-md mx-auto pointer-events-auto flex flex-col items-center gap-1 mb-1">
+          {!isMissionCompleted && currentStep ? (
+            <div className="flex flex-col items-center w-full">
+              {/* Compact Active Quest Pill */}
+              <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-slate-950/90 backdrop-blur-md rounded-2xl border border-amber-400/50 shadow-xl text-white w-full max-w-sm">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-lg shrink-0">{targetItem ? targetItem.emoji : '🎯'}</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] text-amber-400 font-black font-game uppercase tracking-wider">
+                      MISI PETUALANGAN
                     </span>
-                    {targetItem && (
-                      <span className="text-[10px] text-amber-200 font-bold font-game">
-                        Target: <span className="text-white font-black">{targetItem.word}</span> ({targetItem.translation}) {targetItem.emoji}
-                      </span>
-                    )}
+                    <span className="text-xs font-black text-white font-game truncate">
+                      {targetItem ? `${targetItem.word} = ${targetItem.translation}` : 'Temukan Benda'}
+                    </span>
                   </div>
-                  <div className="text-[11px] md:text-xs font-black text-amber-200 leading-snug">
-                    "{currentStep.speechText}"
-                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {/* Pronunciation Audio Button */}
+                  <button
+                    onClick={() => {
+                      audio.speak(targetItem ? targetItem.word : currentStep.speechText);
+                    }}
+                    className="px-2 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[10px] font-game flex items-center gap-0.5 cursor-pointer active:scale-95 shadow transition-all"
+                    title="Dengarkan Pengucapan Bahasa Inggris"
+                  >
+                    <span>🔊</span>
+                    <span className="hidden xs:inline">Dengar</span>
+                  </button>
+
+                  {/* Story Details Toggle Button */}
+                  <button
+                    onClick={() => setShowStoryDetails(prev => !prev)}
+                    className="p-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] cursor-pointer active:scale-95 border border-slate-700"
+                    title={showStoryDetails ? 'Tutup Catatan Cerita' : 'Lihat Catatan Cerita'}
+                  >
+                    {showStoryDetails ? '✕' : '💬'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expandable Story Quote (Only when user taps 💬) */}
+              {showStoryDetails && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 p-2 bg-slate-950/95 backdrop-blur-md rounded-xl border border-white/10 text-[10px] text-slate-200 max-w-sm shadow-xl flex flex-col gap-0.5 text-center"
+                >
+                  <p className="font-bold text-amber-200">"{currentStep.speechText}"</p>
                   {currentStep.indonesianText && (
-                    <div className="text-[10px] text-slate-300 font-medium leading-tight mt-0.5">
-                      🇮🇩 Artinya: "{currentStep.indonesianText}"
-                    </div>
+                    <p className="text-slate-400 text-[9px]">🇮🇩 {currentStep.indonesianText}</p>
                   )}
-                </div>
-              ) : (
-                <div className="text-xs font-bold text-emerald-300 font-game flex items-center gap-1.5">
-                  <span className="text-base animate-bounce">🎉</span>
-                  <span>Misi petualangan selesai! Raih TIANG BENDERA atau berkebun di Harvest Moon!</span>
-                </div>
+                </motion.div>
               )}
             </div>
-
-            {/* Audio Speak Button */}
-            {!isMissionCompleted && currentStep && (
-              <button
-                onClick={() => {
-                  audio.speak(currentStep.speechText);
-                }}
-                className="px-2 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 flex items-center gap-1 text-[11px] font-black shrink-0 cursor-pointer active:scale-95 shadow transition-all"
-                title="Dengarkan suara bahasa Inggris"
-              >
-                <span>🔊</span>
-                <span className="hidden sm:inline">Suara</span>
-              </button>
-            )}
-          </motion.div>
+          ) : (
+            <div className="px-3.5 py-1.5 bg-emerald-950/90 backdrop-blur-md rounded-full border border-emerald-400/60 shadow-xl text-emerald-300 font-game text-xs font-black flex items-center gap-1.5 animate-bounce">
+              <span>🎉</span>
+              <span>Misi Selesai! Capai TIANG BENDERA 🚩</span>
+            </div>
+          )}
         </div>
 
         {/* BOTTOM RIGHT Spacer */}
-        <div className="hidden md:block w-36 pointer-events-none" />
+        <div className="hidden lg:block w-36 pointer-events-none" />
       </div>
     </div>
   );

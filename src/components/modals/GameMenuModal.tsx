@@ -14,6 +14,7 @@ interface GameMenuModalProps {
   onOpenBadges: () => void;
   onOpenMiniGames: () => void;
   onOpenPS3Graphics?: () => void;
+  onEnterRoom?: (roomId: string) => void;
   onToggleMusic: () => void;
   onToggleSfx: () => void;
   onToggleLanguage: () => void;
@@ -34,6 +35,7 @@ export const GameMenuModal: React.FC<GameMenuModalProps> = ({
   onOpenBadges,
   onOpenMiniGames,
   onOpenPS3Graphics,
+  onEnterRoom,
   onToggleMusic,
   onToggleSfx,
   onToggleLanguage,
@@ -119,6 +121,32 @@ export const GameMenuModal: React.FC<GameMenuModalProps> = ({
 
             {/* Quick Grid of Core Game Features */}
             <div className="grid grid-cols-2 gap-2.5 pt-1">
+              {/* Ruangan 3D Interaktif */}
+              {currentLevel.rooms && currentLevel.rooms.length > 0 && onEnterRoom && (
+                <button
+                  onClick={() => {
+                    const firstRoom = currentLevel.rooms?.[0];
+                    if (firstRoom) {
+                      audio.playDoorOpen();
+                      onClose();
+                      onEnterRoom(firstRoom.id);
+                    }
+                  }}
+                  className="p-3.5 bg-gradient-to-br from-amber-600/30 via-yellow-600/20 to-amber-700/30 hover:from-amber-600/40 rounded-2xl border-2 border-amber-400 text-left transition-all cursor-pointer group shadow-lg"
+                >
+                  <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🚪</div>
+                  <div className="text-xs font-black text-amber-300 font-game flex items-center justify-between">
+                    <span>Ruangan 3D</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-amber-400 text-slate-950 rounded-full font-black">
+                      {currentLevel.rooms.length}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-300 font-medium truncate mt-0.5">
+                    {currentLevel.rooms[0]?.nameId}
+                  </div>
+                </button>
+              )}
+
               {/* Kebun Harvest Moon (Farm Mode Shortcut) */}
               {onOpenFarm && (
                 <button
@@ -127,10 +155,10 @@ export const GameMenuModal: React.FC<GameMenuModalProps> = ({
                     onClose();
                     onOpenFarm();
                   }}
-                  className="p-3.5 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-amber-500/20 hover:from-amber-500/30 rounded-2xl border-2 border-amber-400 text-left transition-all cursor-pointer group shadow-lg"
+                  className="p-3.5 bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-emerald-500/20 hover:from-emerald-500/30 rounded-2xl border-2 border-emerald-400 text-left transition-all cursor-pointer group shadow-lg"
                 >
                   <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🚜</div>
-                  <div className="text-xs font-black text-amber-300 font-game">Kebun Harvest Moon</div>
+                  <div className="text-xs font-black text-emerald-300 font-game">Kebun Harvest Moon</div>
                   <div className="text-[11px] text-slate-300 font-medium truncate mt-0.5">
                     Bertani, menyiram & ternak
                   </div>
