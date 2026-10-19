@@ -138,6 +138,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           className="flex flex-col items-center"
         >
+          {/* SAHABAT KAFA OFFICIAL EDITION BADGE */}
+          <div className="mb-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-500/30 via-amber-400/40 to-amber-500/30 border border-amber-400/80 text-amber-300 font-game font-black text-xs sm:text-sm tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.5)] flex items-center gap-2 ring-1 ring-amber-300/40">
+            <span className="animate-bounce">👑</span>
+            <span>SAHABAT KAFA OFFICIAL EDITION</span>
+            <span className="animate-bounce">⭐</span>
+          </div>
+
           <div className="text-3xl md:text-5xl font-black text-white font-game drop-shadow-[0_6px_16px_rgba(0,0,0,0.8)] tracking-wider flex items-center gap-2">
             <span>🤖</span>
             <span>PETUALANGAN</span>

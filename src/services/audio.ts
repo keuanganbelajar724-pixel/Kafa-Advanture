@@ -230,6 +230,105 @@ class AudioEngine {
     });
   }
 
+  /**
+   * Signature Sahabat Kafa Jurus / Ultimate Skill Audio & Heroic Voice Shout.
+   * Plays a high-impact synthesized battle fanfare with bass shockwave
+   * and triggers an energetic Indonesian superhero speech shout: "Jurus Sahabat Kafa!"
+   */
+  public playSahabatKafaJurus(powerName?: string) {
+    if (!this.sfxEnabled || this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+
+    // 1. Heavy bass impact / shockwave surge
+    const bassOsc = this.ctx.createOscillator();
+    const bassGain = this.ctx.createGain();
+    bassOsc.type = 'sawtooth';
+    bassOsc.frequency.setValueAtTime(160, now);
+    bassOsc.frequency.exponentialRampToValueAtTime(45, now + 0.4);
+    bassGain.gain.setValueAtTime(0.35, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    bassOsc.connect(bassGain);
+    bassGain.connect(this.ctx.destination);
+    bassOsc.start(now);
+    bassOsc.stop(now + 0.45);
+
+    // 2. Ascending heroic anime-style trumpet fanfares (C5, G5, C6, E6, G6)
+    const fanfare = [
+      { f: 523.25, time: 0, dur: 0.18, vol: 0.25 },
+      { f: 659.25, time: 0.08, dur: 0.22, vol: 0.28 },
+      { f: 783.99, time: 0.16, dur: 0.25, vol: 0.30 },
+      { f: 1046.50, time: 0.24, dur: 0.55, vol: 0.35 },
+      { f: 1318.51, time: 0.32, dur: 0.65, vol: 0.32 },
+      { f: 1567.98, time: 0.40, dur: 0.85, vol: 0.38 },
+    ];
+
+    fanfare.forEach(note => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(note.f, now + note.time);
+      gain.gain.setValueAtTime(note.vol, now + note.time);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + note.time + note.dur);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + note.time);
+      osc.stop(now + note.time + note.dur);
+    });
+
+    // 3. Shimmering celestial glitter / star power chime
+    const glints = [2093.0, 2637.0, 3135.96, 4186.0];
+    glints.forEach((freq, idx) => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + 0.2 + idx * 0.06);
+      gain.gain.setValueAtTime(0.18, now + 0.2 + idx * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2 + idx * 0.06 + 0.35);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + 0.2 + idx * 0.06);
+      osc.stop(now + 0.2 + idx * 0.06 + 0.35);
+    });
+
+    // 4. Energetic Superhero Voice Branding Shout: "Jurus Sahabat Kafa!"
+    const voiceText = powerName 
+      ? `Jurus Sahabat Kafa! ${powerName}!` 
+      : 'Jurus Sahabat Kafa!';
+    this.speakSahabatKafaVoice(voiceText);
+  }
+
+  /**
+   * Energetic vocal callout for Sahabat Kafa branding
+   */
+  public speakSahabatKafaVoice(text: string) {
+    if (this.isMuted) return;
+    if (!('speechSynthesis' in window)) return;
+
+    try {
+      // Don't cancel speech immediately if user is listening to an English vocab quiz,
+      // but ensure short heroic delivery
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.15; // fast, energetic hero voice
+      utterance.pitch = 1.25; // heroic, youthful anime hero tone
+      utterance.lang = 'id-ID';
+
+      const voices = window.speechSynthesis.getVoices();
+      const idVoice = voices.find(v => v.lang.startsWith('id') || v.lang.startsWith('ms'));
+      if (idVoice) {
+        utterance.voice = idVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      // Ignore if browser blocks audio policy
+    }
+  }
+
   public playTrophyUnlock() {
     if (!this.sfxEnabled || this.isMuted) return;
     this.initContext();

@@ -97,6 +97,45 @@ function createWallpaperTexture(wallColorHex: string): THREE.CanvasTexture {
   return texture;
 }
 
+// Helper: Procedural Sahabat Kafa Wall LED Neon Plaque
+function createSahabatKafaSignTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 140;
+  const ctx = canvas.getContext('2d')!;
+
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, 512, 0);
+  grad.addColorStop(0, '#020617');
+  grad.addColorStop(0.5, '#0f172a');
+  grad.addColorStop(1, '#020617');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 512, 140);
+
+  // Gold Border
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(6, 6, 500, 128);
+
+  // Glowing Text
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#fbbf24';
+  ctx.shadowBlur = 16;
+  ctx.font = '900 38px "Fredoka", "Arial Black", sans-serif';
+  ctx.fillStyle = '#fef08a';
+  ctx.fillText('👑 SAHABAT KAFA 👑', 256, 50);
+
+  ctx.shadowBlur = 6;
+  ctx.font = '700 18px "Fredoka", "Arial", sans-serif';
+  ctx.fillStyle = '#fde68a';
+  ctx.fillText('EDISI PETUALANGAN & BELAJAR SD', 256, 96);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 // Helper: Procedural Soccer Ball Texture
 function createSoccerBallTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -268,8 +307,9 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
 
   const handlePetInteract = useCallback(() => {
     audio.playPowerUp();
+    audio.speakSahabatKafaVoice('Halo Sahabat Kafa! Terus semangat belajar!');
     confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
-    spawnScore('💖 +10 XP Sahabat Robo-Pet!', '#EC4899', 40, -50);
+    spawnScore('💖 +10 XP Sahabat Kafa Robo-Pet!', '#EC4899', 40, -50);
   }, [spawnScore]);
 
   const handleJukeboxInteract = useCallback(() => {
@@ -549,6 +589,20 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
     backWall.position.set(0, 2.55, -4.5);
     backWall.receiveShadow = true;
     scene.add(backWall);
+
+    // Sahabat Kafa Official 3D LED Wall Plaque
+    const signTexture = createSahabatKafaSignTexture();
+    const signGeo = new THREE.BoxGeometry(3.6, 0.95, 0.08);
+    const signMat = new THREE.MeshStandardMaterial({
+      map: signTexture,
+      emissive: 0xf59e0b,
+      emissiveMap: signTexture,
+      emissiveIntensity: atmosphere === 'night' ? 0.75 : 0.45,
+      roughness: 0.25,
+    });
+    const signMesh = new THREE.Mesh(signGeo, signMat);
+    signMesh.position.set(0, 4.3, -4.32);
+    scene.add(signMesh);
 
     // Baseboard trim
     const baseboardGeo = new THREE.BoxGeometry(11, 0.35, 0.08);

@@ -38,9 +38,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="px-4 py-1.5 bg-amber-400 text-amber-950 font-black rounded-full text-xs uppercase tracking-widest font-game shadow-lg border-2 border-amber-200"
+          className="px-4 py-1.5 bg-amber-400 text-amber-950 font-black rounded-full text-xs uppercase tracking-widest font-game shadow-lg border-2 border-amber-200 flex items-center gap-1.5"
         >
-          🤖 Game Petualangan Robot Pintar SD 2.5D
+          <span>👑</span>
+          <span>Edisi Resmi Sahabat Kafa • Game Petualangan Robot SD</span>
         </motion.div>
 
         {/* Quick MUTE Button */}
@@ -60,6 +61,17 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
 
       {/* Center Title Logo */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-2xl px-4">
+        {/* SAHABAT KAFA OFFICIAL BANNER */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-500/35 via-amber-400/50 to-amber-500/35 border-2 border-amber-300 text-amber-200 font-game font-black text-xs sm:text-sm tracking-widest shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center gap-2"
+        >
+          <span>👑</span>
+          <span>SAHABAT KAFA OFFICIAL EDITION</span>
+          <span>👑</span>
+        </motion.div>
+
         <motion.h1
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

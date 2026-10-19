@@ -176,15 +176,19 @@ export const GameWorld: React.FC<GameWorldProps> = ({
 
   // Camera Zoom mode from settings (default 'wide' for expansive, cool view!)
   const cameraZoom = graphicSettings?.cameraZoom || 'wide';
-  const zoomFactor = cameraZoom === 'wide' ? 0.82 : cameraZoom === 'close' ? 1.25 : 1.0;
+  const zoomFactor = cameraZoom === 'wide' ? 0.96 : cameraZoom === 'close' ? 1.30 : 1.10;
 
-  // Responsive world scale: Target 800px on desktop for spacious, modern platformer proportions ("Game Keren")
+  // Responsive world scale: Proportioned so the ground platform naturally sits around ~72% - 76% of screen height
   const worldScale = isPortrait
-    ? Math.max(0.55, Math.min(1.20, Math.min(viewportHeight / 640, viewportWidth / 460))) * zoomFactor
-    : Math.max(0.60, Math.min(1.15, viewportHeight / 800)) * zoomFactor;
+    ? Math.max(0.65, Math.min(1.25, Math.min(viewportHeight / 620, viewportWidth / 440))) * zoomFactor
+    : Math.max(0.85, Math.min(1.50, viewportHeight / 640)) * zoomFactor;
 
-  // Ensure world content fills 100% of the screen height, eliminating the bottom black void!
-  const worldContentHeight = Math.max(WORLD_HEIGHT, Math.ceil((viewportHeight + 60) / worldScale));
+  // Dynamic vertical camera offset: frames the ground line at ~74% of the viewport height on any display
+  const targetGroundScreenY = viewportHeight * 0.74;
+  const cameraY = Math.max(0, (level.groundY * worldScale - targetGroundScreenY) / worldScale);
+
+  // Ensure world content fills 100% of the screen height without empty voids
+  const worldContentHeight = Math.max(WORLD_HEIGHT, Math.ceil((viewportHeight + 80) / worldScale) + cameraY);
 
   // Direct GPU Compositing DOM Refs (Eliminates 60FPS React Virtual DOM overhead!)
   const worldContainerRef = useRef<HTMLDivElement>(null);
@@ -199,6 +203,7 @@ export const GameWorld: React.FC<GameWorldProps> = ({
   const [bouncingItemId, setBouncingItemId] = useState<string | null>(null);
   const [dustPuffs, setDustPuffs] = useState<{ id: string; x: number; y: number; scale: number }[]>([]);
   const [floatingScores, setFloatingScores] = useState<{ id: string; x: number; y: number; text: string; color: string }[]>([]);
+  const [globeSpinCount, setGlobeSpinCount] = useState<number>(0);
 
   // Player Jurus & Projectiles
   const playerProjectilesRef = useRef<PlayerProjectile[]>([]);
@@ -221,11 +226,13 @@ export const GameWorld: React.FC<GameWorldProps> = ({
   const [isShieldActive, setIsShieldActive] = useState<boolean>(false);
   const [superNovaActive, setSuperNovaActive] = useState<boolean>(false);
 
-  // Sahabat Kafa Power Activation Banner, Buff Aura & Visual Shockwave FX
+  // Sahabat Kafa Power Activation Banner, Buff Aura, Screen Flash & Visual Shockwave FX
   const [activeKafaBanner, setActiveKafaBanner] = useState<{ title: string; subtitle: string; icon: string; glowColor: string } | null>(null);
   const kafaBannerTimeoutRef = useRef<any>(null);
   const [kafaShockwave, setKafaShockwave] = useState<{ id: string; x: number; y: number } | null>(null);
   const [kafaBuffUntil, setKafaBuffUntil] = useState<number>(0);
+  const [kafaScreenFlash, setKafaScreenFlash] = useState<boolean>(false);
+  const [jurusHeroShout, setJurusHeroShout] = useState<string | null>(null);
   const isKafaBuffActive = Date.now() < kafaBuffUntil;
 
   // Acrobatic Double Jump & Spin
@@ -274,18 +281,28 @@ export const GameWorld: React.FC<GameWorldProps> = ({
 
   const triggerKafaPowerBanner = useCallback((powerName: string, icon: string, glowColor: string = '#F59E0B') => {
     setActiveKafaBanner({
-      title: '👑 SAHABAT KAFA POWER!',
+      title: '👑 JURUS SAHABAT KAFA!',
       subtitle: powerName.toUpperCase(),
       icon,
       glowColor,
     });
-    audio.playSahabatKafaPower();
-    setKafaBuffUntil(Date.now() + 2500);
+
+    // Signature fanfare + energetic voice shout: "Jurus Sahabat Kafa!"
+    audio.playSahabatKafaJurus(powerName);
+    setKafaBuffUntil(Date.now() + 3000);
+
+    // Screen golden shockwave flash
+    setKafaScreenFlash(true);
+    setTimeout(() => setKafaScreenFlash(false), 380);
+
+    // Hero shout bubble above character
+    setJurusHeroShout('👑 JURUS SAHABAT KAFA!');
+    setTimeout(() => setJurusHeroShout(null), 1300);
 
     if (kafaBannerTimeoutRef.current) clearTimeout(kafaBannerTimeoutRef.current);
     kafaBannerTimeoutRef.current = setTimeout(() => {
       setActiveKafaBanner(null);
-    }, 1400);
+    }, 1800);
   }, []);
 
   // Atmospheric adventure visual particles (cherry blossom petals, stardust, fireflies, sunlight glints)
@@ -378,6 +395,14 @@ export const GameWorld: React.FC<GameWorldProps> = ({
       setFloatingScores(prev => prev.filter(s => s.id !== id));
     }, 1200);
   }, []);
+
+  const triggerSpinGlobe = useCallback(() => {
+    setGlobeSpinCount(c => c + 1);
+    audio.playCoin();
+    onCollectCoin(2);
+    spawnDust(270, level.groundY - 15, 1.8);
+    spawnFloatingScore(270, level.groundY - 70, '🌍 KELILING DUNIA! +2 🪙', '#38BDF8');
+  }, [level.groundY, onCollectCoin, spawnDust, spawnFloatingScore]);
 
   const triggerHeroEmote = useCallback((emoteType: 'dance' | 'wave' | 'star') => {
     audio.playPowerUp();
@@ -1376,7 +1401,7 @@ export const GameWorld: React.FC<GameWorldProps> = ({
 
         // DIRECT GPU COMPOSITED WORLD TRANSFORM (Butter smooth 60/120fps with zero React diffing!)
         if (worldContainerRef.current) {
-          worldContainerRef.current.style.transform = `scale(${worldScale}) translate3d(-${nextCam}px, 0, 0)`;
+          worldContainerRef.current.style.transform = `scale(${worldScale}) translate3d(-${nextCam}px, -${cameraY}px, 0)`;
         }
 
         // Throttle React setCameraX to ~10Hz (every 100ms) for progress bar and distance meter
@@ -1595,16 +1620,16 @@ export const GameWorld: React.FC<GameWorldProps> = ({
         style={{
           width: `${level.worldWidth}px`,
           height: `${worldContentHeight}px`,
-          transform: `scale(${worldScale}) translate3d(-${cameraX}px, 0, 0)`,
+          transform: `scale(${worldScale}) translate3d(-${cameraX}px, -${cameraY}px, 0)`,
           transformOrigin: 'top left',
         }}
       >
-        {/* LAYER 1: SEAMLESS THEMATIC PANORAMA (CLEAN, CALM & HIGH LEGIBILITY) */}
+        {/* LAYER 1: SEAMLESS THEMATIC PANORAMA (VIBRANT, CLEAN & IMMERSIVE) */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden bg-slate-950">
-          {/* Gentle background color backing to reduce visual clutter */}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/90 via-slate-950/80 to-slate-950 pointer-events-none" />
+          {/* Gentle background color backing */}
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-950/70 to-slate-950 pointer-events-none" />
 
-          {/* Background Art with Soft Depth of Field and reduced opacity to avoid confusing busy-ness */}
+          {/* Background Art with High Crisp Legibility and Vibrant Colors */}
           <div
             className="absolute inset-0 will-change-transform transition-opacity duration-300"
             style={{
@@ -1612,30 +1637,59 @@ export const GameWorld: React.FC<GameWorldProps> = ({
               backgroundRepeat: 'repeat-x',
               backgroundSize: `auto ${WORLD_HEIGHT}px`,
               backgroundPosition: 'left top',
-              opacity: graphicSettings?.cleanBackgroundMode ? 0.32 : 0.48,
+              opacity: graphicSettings?.cleanBackgroundMode ? 0.55 : 0.76,
               filter: graphicSettings?.cleanBackgroundMode
-                ? 'brightness(0.92) contrast(0.9) saturate(0.85)'
-                : 'brightness(0.96) contrast(0.95)',
+                ? 'brightness(1.02) contrast(1.02)'
+                : 'brightness(1.06) contrast(1.05) saturate(1.12)',
             }}
           />
 
-          {/* Clean Focus Scrim (Keeps background calm and lets foreground elements pop out!) */}
+          {/* Clean Focus Scrim (Keeps background calm and lets interactive items pop out) */}
           <div
             className={`absolute inset-0 transition-colors duration-300 ${
               graphicSettings?.cleanBackgroundMode
-                ? 'bg-slate-950/40 backdrop-blur-[0.5px]'
-                : 'bg-gradient-to-t from-slate-950/70 via-slate-950/30 to-slate-950/50'
+                ? 'bg-slate-950/35 backdrop-blur-[0.5px]'
+                : 'bg-gradient-to-b from-slate-950/20 via-transparent to-slate-950/50'
             }`}
           />
 
-          {/* Gentle, non-intrusive Ambient Sunbeams across the whole world */}
-          {!graphicSettings?.cleanBackgroundMode && [400, 1500, 2600, 3800, 5000, 6200, 7500, 8800].map(sX => (
+          {/* Volumetric Sunbeams & God Rays streaming through high classroom windows */}
+          {!graphicSettings?.cleanBackgroundMode && [350, 1450, 2550, 3750, 4950, 6150, 7450, 8750].map(sX => (
             <div
               key={sX}
-              className="absolute top-0 w-72 h-full bg-gradient-to-b from-amber-100/12 via-amber-100/4 to-transparent transform -skew-x-12 blur-xl pointer-events-none"
+              className="absolute top-0 w-80 h-full bg-gradient-to-b from-amber-200/18 via-amber-200/6 to-transparent transform -skew-x-12 blur-2xl pointer-events-none"
               style={{ left: `${sX}px` }}
             />
           ))}
+
+          {/* THEMATIC CLASSROOM BANNERS & EDUCATIONAL FLAGS */}
+          {level.areaId === 'area_school' && (
+            <div className="absolute top-5 left-0 w-full pointer-events-none select-none z-10">
+              {[500, 2200, 3900, 5600, 7300, 9000].map(bX => (
+                <div key={bX} className="absolute flex flex-col items-center" style={{ left: `${bX}px` }}>
+                  {/* Floating Motivational Banner */}
+                  <div className="px-5 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs font-game border-2 border-white shadow-[0_4px_20px_rgba(245,158,11,0.7)] flex items-center gap-2 tracking-wide ring-2 ring-amber-300/40">
+                    <span className="text-sm animate-bounce">⭐</span>
+                    <span>KELAS PINTAR SAHABAT KAFA</span>
+                    <span className="text-sm animate-bounce">👑</span>
+                  </div>
+                  {/* Colorful Subject Pennants */}
+                  <div className="flex items-center gap-3 mt-1 opacity-80 text-sm">
+                    <span>📐</span>
+                    <span>🔬</span>
+                    <span>🎨</span>
+                    <span>📚</span>
+                    <span>🎵</span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Classroom Wall Clock with Ticking Animation */}
+              <div className="absolute left-[540px] top-[100px] w-13 h-13 rounded-full bg-slate-900/90 border-3 border-amber-400 shadow-xl flex items-center justify-center text-lg filter drop-shadow">
+                <span className="animate-pulse">🕒</span>
+              </div>
+            </div>
+          )}
 
           {/* Luminous Ambient Stardust Motes & Floating Sparkles across the whole Adventure */}
           {[
@@ -1657,12 +1711,12 @@ export const GameWorld: React.FC<GameWorldProps> = ({
             <motion.div
               key={mote.id}
               animate={{
-                opacity: [0.25, 0.75, 0.25],
+                opacity: [0.35, 0.9, 0.35],
                 scale: [0.85, 1.25, 0.85],
-                y: [0, -10, 0],
+                y: [0, -12, 0],
               }}
               transition={{ repeat: Infinity, duration: 3 + (mote.id % 4), ease: 'easeInOut' }}
-              className="absolute text-sm pointer-events-none select-none text-amber-200/60 filter drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+              className="absolute text-sm pointer-events-none select-none text-amber-200/80 filter drop-shadow-[0_0_8px_rgba(245,158,11,0.9)]"
               style={{ left: `${mote.x}px`, top: `${mote.y}px` }}
             >
               {mote.icon}
@@ -1685,57 +1739,71 @@ export const GameWorld: React.FC<GameWorldProps> = ({
                 zIndex: Math.floor(level.groundY) - 10,
               }}
             >
-              {/* 3D TILTED TOP SURFACE (Depth Perspective Plane) */}
+              {/* 3D TILTED TOP SURFACE (Depth Perspective Floor Plane) */}
               <div
-                className={`w-full h-5 relative border-t-2 shadow-lg ${
+                className={`w-full h-6 relative border-t-2 shadow-xl ${
                   isIndoor
-                    ? 'bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 border-amber-300 shadow-[0_-2px_15px_rgba(245,158,11,0.4)]'
+                    ? 'bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 border-yellow-200 shadow-[0_-4px_22px_rgba(245,158,11,0.55)]'
                     : isNature
-                    ? 'bg-gradient-to-b from-emerald-500 via-emerald-600 to-emerald-700 border-emerald-300 shadow-[0_-2px_15px_rgba(16,185,129,0.4)]'
-                    : 'bg-gradient-to-b from-amber-600 via-stone-600 to-stone-700 border-stone-300 shadow-[0_-2px_15px_rgba(217,119,6,0.4)]'
+                    ? 'bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-700 border-emerald-200 shadow-[0_-4px_22px_rgba(16,185,129,0.55)]'
+                    : 'bg-gradient-to-b from-amber-500 via-stone-500 to-stone-700 border-amber-200 shadow-[0_-4px_22px_rgba(217,119,6,0.55)]'
                 }`}
               >
-                {/* 3D Wood Planks / Paving Tiles Pattern */}
-                <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(90deg,#000,#000_2px,transparent_2px,transparent_80px)]" />
-                {/* Specular Rim Light */}
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-white/70" />
+                {/* 3D Wood Planks / Paving Tiles Pattern with warm light gaps */}
+                <div className="absolute inset-0 opacity-25 bg-[repeating-linear-gradient(90deg,#fff,#fff_2px,transparent_2px,transparent_75px)]" />
+                {/* Top Specular Rim Reflection */}
+                <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-white/90 via-yellow-100/90 to-white/90" />
                 {/* Golden Inset Trim Line */}
-                <div className="absolute inset-x-0 bottom-0 h-[1.5px] bg-amber-400/60" />
+                <div className="absolute inset-x-0 bottom-0 h-[2px] bg-amber-300 shadow-[0_0_8px_rgba(245,158,11,1)]" />
               </div>
 
-              {/* 3D BEVELED FRONT CLIFF / FOUNDATION FACADE (SEAMLESSLY FILLS TO SCREEN BOTTOM!) */}
+              {/* 3D BEVELED FRONT CLIFF / FOUNDATION FACADE (Cross-Section Architecture with Embedded Crystals & Ancient Coins!) */}
               <div
                 className={`w-full h-full relative overflow-hidden ${
                   isIndoor
-                    ? 'bg-gradient-to-b from-amber-950 via-stone-900 to-slate-950 border-t-2 border-amber-900'
+                    ? 'bg-gradient-to-b from-slate-900 via-slate-950 to-black border-t-2 border-amber-500/60'
                     : isNature
-                    ? 'bg-gradient-to-b from-stone-900 via-emerald-950 to-slate-950 border-t-2 border-emerald-950'
-                    : 'bg-gradient-to-b from-stone-900 via-stone-950 to-black border-t-2 border-stone-950'
+                    ? 'bg-gradient-to-b from-emerald-950 via-slate-950 to-black border-t-2 border-emerald-500/60'
+                    : 'bg-gradient-to-b from-stone-900 via-slate-950 to-black border-t-2 border-amber-500/60'
                 }`}
               >
                 {/* Ambient Occlusion Shadow Strip underneath the rim */}
-                <div className="w-full h-4 bg-gradient-to-b from-black/80 to-transparent" />
+                <div className="w-full h-6 bg-gradient-to-b from-black/90 to-transparent" />
 
-                {/* Architectural Wainscoting & Wood Paneling Lines */}
-                <div className="absolute inset-x-0 top-3 h-28 opacity-25 bg-[repeating-linear-gradient(90deg,#000,#000_2px,transparent_2px,transparent_60px),repeating-linear-gradient(0deg,#000,#000_2px,transparent_2px,transparent_45px)]" />
+                {/* Subterranean Clean Brick / Stone Ashlar Masonry Pattern */}
+                <div className="absolute inset-0 opacity-25 bg-[repeating-linear-gradient(0deg,#334155_2px,transparent_2px,transparent_38px),repeating-linear-gradient(90deg,#334155_2px,transparent_2px,transparent_76px)]" />
 
-                {/* Foundation Structural Support Pillars every 260px */}
-                <div className="absolute inset-0 opacity-25 bg-[repeating-linear-gradient(90deg,#000,#000_10px,transparent_10px,transparent_260px)]" />
+                {/* Subterranean Glowing Tech Conduits with Pulsing Blue/Amber Energy Nodes */}
+                <div className="absolute inset-x-0 top-4 h-1.5 bg-gradient-to-r from-amber-500/40 via-cyan-400/50 to-amber-500/40 shadow-[0_0_12px_rgba(56,189,248,0.7)]" />
 
-                {/* Subterranean Golden Sconces & Archive Details */}
-                <div className="absolute inset-x-0 top-6 flex justify-around opacity-45 pointer-events-none select-none">
-                  {[240, 680, 1120, 1560, 2000, 2440, 2880, 3320, 3760, 4200, 4640, 5080, 5520, 5960, 6400, 6840, 7280, 7720, 8160, 8600, 9040, 9480].map((px) => (
-                    <div key={px} className="absolute flex flex-col items-center gap-1.5" style={{ left: `${px}px` }}>
-                      <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-xs shadow-[0_0_12px_rgba(245,158,11,0.5)]">
-                        {isIndoor ? '🏛️' : '💎'}
-                      </div>
-                      <div className="w-3 h-0.5 bg-amber-400/60 rounded-full" />
+                {/* Embedded Glowing Treasures & Crystals in Foundation Every 220px */}
+                <div className="absolute inset-x-0 top-6 flex justify-around pointer-events-none select-none">
+                  {[240, 520, 800, 1100, 1400, 1700, 2000, 2300, 2600, 2900, 3200, 3500, 3800, 4100, 4400, 4700, 5000, 5300, 5600, 5900, 6200, 6500, 6800, 7100, 7400, 7700, 8000, 8300, 8600, 8900, 9200, 9500].map((px, idx) => (
+                    <div key={px} className="absolute flex flex-col items-center gap-1" style={{ left: `${px}px` }}>
+                      {/* Alternating embedded golden coins, crystals, and royal sconces */}
+                      {idx % 3 === 0 ? (
+                        <div className="px-2 py-0.5 rounded-full bg-slate-900/95 border border-amber-400/80 shadow-[0_0_15px_rgba(245,158,11,0.7)] flex items-center gap-1 text-[10px] text-amber-300 font-bold font-game">
+                          <span className="animate-pulse">🪙</span>
+                          <span className="text-[9px]">EMAS</span>
+                        </div>
+                      ) : idx % 3 === 1 ? (
+                        <div className="w-7 h-7 rounded-lg bg-cyan-950/80 border border-cyan-400/70 flex items-center justify-center text-xs shadow-[0_0_15px_rgba(56,189,248,0.6)] animate-pulse">
+                          💎
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <div className="w-5 h-5 rounded-full bg-amber-500/30 border border-amber-400 flex items-center justify-center text-[10px] shadow-[0_0_12px_rgba(245,158,11,0.8)]">
+                            💡
+                          </div>
+                          <div className="w-1 h-3 bg-gradient-to-b from-amber-400 to-amber-700" />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
 
                 {/* Soft Foundation Ground Ambient Shadow */}
-                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-slate-950/50 to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-slate-950/80 to-transparent pointer-events-none" />
               </div>
             </div>
           );
@@ -1757,6 +1825,43 @@ export const GameWorld: React.FC<GameWorldProps> = ({
             <ObstacleProp obstacle={obs} />
           </div>
         ))}
+
+        {/* INTERACTIVE SPINNING 3D GLOBE IN CLASSROOM */}
+        {level.areaId === 'area_school' && (
+          <div
+            onClick={triggerSpinGlobe}
+            className="absolute cursor-pointer pointer-events-auto flex flex-col items-center group z-30"
+            style={{
+              left: '260px',
+              top: `${level.groundY - 65}px`,
+            }}
+            title="Putar Bola Dunia (+2 Koin 🪙)"
+          >
+            {/* Floor Contact Shadow */}
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-3 bg-black/40 rounded-full blur-[2px]" />
+
+            {/* Brass Stand & Spinning Globe Sphere */}
+            <div className="relative flex flex-col items-center group-hover:scale-110 active:scale-95 transition-transform">
+              <motion.div
+                animate={{ rotate: globeSpinCount * 360 }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+                className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 via-sky-400 to-emerald-400 border-2 border-white shadow-[0_0_16px_rgba(56,189,248,0.8)] flex items-center justify-center text-xl relative overflow-hidden"
+              >
+                <span className="filter drop-shadow text-2xl">🌍</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/40 pointer-events-none" />
+              </motion.div>
+
+              {/* Brass Meridian & Base */}
+              <div className="w-1.5 h-3 bg-gradient-to-b from-amber-400 to-amber-700 shadow" />
+              <div className="w-8 h-2 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-700 rounded-full border border-amber-300 shadow-md" />
+
+              {/* Proximity Floating Tip */}
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 px-2.5 py-0.5 rounded-full bg-slate-900/95 border border-cyan-400 text-[9px] font-black text-cyan-300 font-game whitespace-nowrap shadow-md pointer-events-none">
+                🌍 PUTAR BOLA DUNIA (+2 🪙)
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* LAYER 3B: ACTIVE PATROLLING ENEMIES (MARIO STYLE) */}
         {enemies.map(enemy => {
@@ -2388,6 +2493,13 @@ export const GameWorld: React.FC<GameWorldProps> = ({
                 >
                   👑
                 </div>
+
+                {/* Sahabat Kafa Floating Branding Badge on Projectile */}
+                <div className="absolute -top-7 whitespace-nowrap px-2 py-0.5 rounded-full bg-slate-950/95 border border-amber-400 text-[8.5px] font-black text-amber-300 font-game shadow-[0_0_12px_rgba(245,158,11,1)] flex items-center gap-1 z-20">
+                  <span className="text-[10px]">👑</span>
+                  <span>SAHABAT KAFA</span>
+                </div>
+
                 {/* Golden star sparkles */}
                 <div className="absolute -bottom-2 text-xs text-yellow-200 animate-ping">✨</div>
               </div>
@@ -2785,6 +2897,18 @@ export const GameWorld: React.FC<GameWorldProps> = ({
             </motion.div>
           )}
 
+          {/* Sahabat Kafa Jurus Superhero Comic Shout Balloon */}
+          {jurusHeroShout && (
+            <motion.div
+              initial={{ scale: 0.4, y: 10, opacity: 0 }}
+              animate={{ scale: [1, 1.12, 1], y: -55, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              className="absolute -top-14 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 text-slate-950 font-black text-xs font-game rounded-full px-3.5 py-1 text-center shadow-[0_0_25px_rgba(245,158,11,1)] flex items-center gap-1.5 whitespace-nowrap z-50 pointer-events-none ring-2 ring-white border-2 border-slate-950 animate-bounce"
+            >
+              <span>{jurusHeroShout}</span>
+            </motion.div>
+          )}
+
           <FacelessCharacter
             gender={character.gender}
             outfitColor={character.outfitColor}
@@ -2893,34 +3017,75 @@ export const GameWorld: React.FC<GameWorldProps> = ({
       </AnimatePresence>
 
       {/* ======================================================== */}
-      {/* SAHABAT KAFA POWER / JURUS CINEMATIC ACTIVATION BANNER */}
+      {/* SAHABAT KAFA POWER / JURUS CINEMATIC CUT-IN BANNER */}
       {/* ======================================================== */}
       <AnimatePresence>
         {activeKafaBanner && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: -25 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ type: 'spring', damping: 18, stiffness: 380 }}
-            className="fixed top-18 sm:top-22 left-1/2 -translate-x-1/2 z-[990] pointer-events-none flex flex-col items-center select-none w-auto max-w-[90vw] px-2"
-          >
-            <div className="relative px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl bg-slate-950/95 border-2 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.85)] flex items-center gap-2.5 sm:gap-3.5 backdrop-blur-xl ring-2 ring-amber-400/30">
-              <span className="text-2xl sm:text-3xl filter drop-shadow animate-bounce">
-                {activeKafaBanner.icon || '👑'}
-              </span>
+          <div className="fixed inset-0 pointer-events-none z-[990] flex flex-col items-center justify-center select-none overflow-hidden">
+            {/* Cinematic Golden Screen Flash */}
+            {kafaScreenFlash && (
+              <motion.div
+                initial={{ opacity: 0.65 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                className="absolute inset-0 bg-gradient-to-t from-amber-500/25 via-yellow-300/35 to-amber-500/25 pointer-events-none"
+              />
+            )}
 
-              <div className="flex flex-col items-start leading-tight">
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-300 font-game bg-amber-500/20 px-1.5 py-0.2 rounded-full border border-amber-400/40">
-                  {activeKafaBanner.title}
-                </span>
-                <span className="text-xs sm:text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-amber-500 font-game tracking-wide drop-shadow mt-0.5">
-                  {activeKafaBanner.subtitle}
-                </span>
-              </div>
+            {/* Anime Horizontal Cut-In Banner with Radiant Speedlines */}
+            <motion.div
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              exit={{ scaleX: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="w-full h-24 sm:h-28 bg-gradient-to-r from-transparent via-slate-950/95 to-transparent border-y-2 border-amber-400 shadow-[0_0_50px_rgba(245,158,11,0.95)] flex items-center justify-center backdrop-blur-md relative"
+            >
+              {/* Radiant diagonal golden speedlines */}
+              <div
+                className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(45deg,#f59e0b_0,#f59e0b_12px,transparent_12px,transparent_24px)] pointer-events-none"
+              />
 
-              <span className="text-base sm:text-lg text-amber-300 font-black">⭐</span>
-            </div>
-          </motion.div>
+              {/* Banner Core Content */}
+              <motion.div
+                initial={{ scale: 0.65, y: 15 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ type: 'spring', damping: 16, stiffness: 450 }}
+                className="flex items-center gap-3 sm:gap-5 px-6 py-2 relative z-10"
+              >
+                {/* Glowing Crown Icon with Shockwave Ping */}
+                <div className="relative flex items-center justify-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-400 via-yellow-200 to-amber-500 border-2 border-white shadow-[0_0_30px_rgba(245,158,11,1)] flex items-center justify-center text-3xl sm:text-4xl animate-bounce">
+                    {activeKafaBanner.icon || '👑'}
+                  </div>
+                  <div className="absolute inset-0 rounded-2xl border-2 border-amber-300 animate-ping opacity-60" />
+                </div>
+
+                {/* Golden Typography with Official Sahabat Kafa Branding */}
+                <div className="flex flex-col items-start leading-tight">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 text-[10px] sm:text-xs font-black uppercase tracking-widest font-game shadow-md border border-white">
+                      👑 JURUS SAHABAT KAFA 👑
+                    </span>
+                    <span className="text-xs text-amber-300 animate-pulse font-game font-black hidden xs:inline">
+                      ⚡ ULTIMATE POWER ⚡
+                    </span>
+                  </div>
+
+                  <div className="text-xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-amber-300 to-yellow-400 font-game tracking-wider drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] mt-1 flex items-center gap-2">
+                    <span>{activeKafaBanner.subtitle}</span>
+                    <span className="text-amber-400 text-base sm:text-2xl animate-spin" style={{ animationDuration: '3s' }}>
+                      ✦
+                    </span>
+                  </div>
+
+                  <div className="text-[10px] sm:text-xs font-bold text-amber-200/90 font-game mt-0.5">
+                    Kekuatan Legendaris Sahabat Kafa Diaktifkan!
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
