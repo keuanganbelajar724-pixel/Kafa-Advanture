@@ -7,16 +7,18 @@ import { audio } from '../../services/audio';
 
 interface Room3DViewProps {
   room: RoomConfig;
+  allRooms?: RoomConfig[];
   character: CharacterConfig;
   discoveredWords: string[];
   onInteractVocab: (item: VocabItem) => void;
   onCollectCoin: (amount: number) => void;
   onCollectStar: (amount: number) => void;
   onUpdateCharacter?: (config: CharacterConfig) => void;
+  onChangeRoom?: (roomId: string) => void;
   onExitRoom: () => void;
 }
 
-type CameraViewMode = 'isometric' | 'orbit' | 'cinematic';
+type CameraViewMode = 'isometric' | 'orbit' | 'cinematic' | 'firstPerson';
 type AtmosphereMode = 'day' | 'sunset' | 'night';
 
 // Helper: Procedural Wood Texture for Floor
@@ -174,14 +176,211 @@ function createSoccerBallTexture(): THREE.CanvasTexture {
   return texture;
 }
 
+// Helper: Procedural Classroom Blackboard Texture
+function createClassroomBlackboardTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d')!;
+
+  // Green chalkboard slate background with texture
+  ctx.fillStyle = '#064e3b';
+  ctx.fillRect(0, 0, 1024, 512);
+
+  // Subtle chalk smudges & dust
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  for (let i = 0; i < 40; i++) {
+    ctx.beginPath();
+    ctx.arc(Math.random() * 1024, Math.random() * 512, Math.random() * 120 + 30, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Wooden Frame
+  ctx.strokeStyle = '#78350f';
+  ctx.lineWidth = 24;
+  ctx.strokeRect(12, 12, 1000, 488);
+
+  ctx.strokeStyle = '#92400e';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(26, 26, 972, 460);
+
+  // Chalkboard Headings
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.font = '900 44px "Fredoka", "Arial Black", sans-serif';
+  ctx.fillStyle = '#fef08a';
+  ctx.shadowColor = 'rgba(254, 240, 138, 0.5)';
+  ctx.shadowBlur = 12;
+  ctx.fillText('👑 SAHABAT KAFA JUARA SD 👑', 512, 45);
+
+  ctx.font = '700 24px "Fredoka", "Arial", sans-serif';
+  ctx.fillStyle = '#6ee7b7';
+  ctx.shadowBlur = 6;
+  ctx.fillText('📚 RUANG KELAS PINTAR & MENYENANGKAN 📚', 512, 100);
+
+  // Chalk Content Columns
+  ctx.textAlign = 'left';
+  ctx.shadowBlur = 4;
+
+  // Left Column: Math Fun
+  ctx.font = '700 28px "Courier New", monospace';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('🧮 MATEMATIKA CERIA:', 65, 160);
+
+  ctx.font = '600 24px "Courier New", monospace';
+  ctx.fillStyle = '#fde047';
+  ctx.fillText('• 25 + 75 = 100 🌟', 85, 210);
+  ctx.fillText('• 15 × 6  = 90 ⚡', 85, 255);
+  ctx.fillText('• 144 ÷ 12 = 12 🎯', 85, 300);
+  ctx.fillText('• 2³ = 8 (Hebat!) ✨', 85, 345);
+
+  // Right Column: English Vocab
+  ctx.font = '700 28px "Courier New", monospace';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('📖 ENGLISH VOCABULARY:', 540, 160);
+
+  ctx.font = '600 24px "Courier New", monospace';
+  ctx.fillStyle = '#93c5fd';
+  ctx.fillText('• TEACHER  = Guru 🧑‍🏫', 560, 210);
+  ctx.fillText('• STUDENT  = Murid 🎒', 560, 255);
+  ctx.fillText('• DESK     = Meja Belajar 🪑', 560, 300);
+  ctx.fillText('• PENCIL   = Pensil ✏️', 560, 345);
+
+  // Footer Chalk Motto
+  ctx.textAlign = 'center';
+  ctx.font = 'italic 700 26px "Fredoka", sans-serif';
+  ctx.fillStyle = '#fbcfe8';
+  ctx.fillText('✦ Rajin Membaca, Bertambah Ilmu, Meraih Cita-cita! ✦', 512, 430);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+// Helper: Procedural Science Lab Periodic / Poster Texture
+function createSciencePosterTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Cyan Neon Border
+  ctx.strokeStyle = '#06b6d4';
+  ctx.lineWidth = 8;
+  ctx.strokeRect(10, 10, 492, 492);
+
+  ctx.textAlign = 'center';
+  ctx.font = '900 32px "Fredoka", sans-serif';
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillText('⚛️ LAB SAINS ROBOTIK ⚛️', 256, 45);
+
+  ctx.font = '700 16px "Fredoka", sans-serif';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('TABEL PERIODIK MINI & ELEKTRON', 256, 85);
+
+  // Mini periodic grid
+  const elements = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S'];
+  const colors = ['#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399', '#22d3ee', '#818cf8', '#c084fc'];
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const idx = r * 4 + c;
+      const x = 50 + c * 105;
+      const y = 120 + r * 75;
+      ctx.fillStyle = colors[idx % colors.length];
+      ctx.fillRect(x, y, 95, 65);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, 95, 65);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '900 24px monospace';
+      ctx.fillText(elements[idx], x + 47, y + 28);
+      ctx.font = '700 12px monospace';
+      ctx.fillText(`${idx + 1}`, x + 47, y + 52);
+    }
+  }
+
+  ctx.font = 'italic 700 16px sans-serif';
+  ctx.fillStyle = '#fde047';
+  ctx.fillText('⚡ E = mc² • Molekul & Energi Masa Depan ⚡', 256, 465);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+// Helper: Procedural Space Viewport Galaxy Texture
+function createSpaceViewportTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d')!;
+
+  // Deep space gradient
+  const bgGrad = ctx.createRadialGradient(256, 256, 40, 256, 256, 320);
+  bgGrad.addColorStop(0, '#1e1b4b');
+  bgGrad.addColorStop(0.5, '#0f172a');
+  bgGrad.addColorStop(1, '#020617');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Nebula clouds
+  for (let i = 0; i < 6; i++) {
+    const nGrad = ctx.createRadialGradient(
+      Math.random() * 400 + 50,
+      Math.random() * 400 + 50,
+      10,
+      256,
+      256,
+      200
+    );
+    nGrad.addColorStop(0, i % 2 === 0 ? 'rgba(168, 85, 247, 0.25)' : 'rgba(56, 189, 248, 0.25)');
+    nGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = nGrad;
+    ctx.fillRect(0, 0, 512, 512);
+  }
+
+  // Twinkling stars
+  for (let i = 0; i < 120; i++) {
+    const sx = Math.random() * 512;
+    const sy = Math.random() * 512;
+    const sr = Math.random() * 2 + 0.5;
+    ctx.fillStyle = Math.random() > 0.3 ? '#ffffff' : '#fde047';
+    ctx.beginPath();
+    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Glowing ring planet in distance
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(380, 120, 48, 14, Math.PI / 6, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = '#0284c7';
+  ctx.beginPath();
+  ctx.arc(380, 120, 22, 0, Math.PI * 2);
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 export const Room3DView: React.FC<Room3DViewProps> = ({
   room,
+  allRooms,
   character,
   discoveredWords,
   onInteractVocab,
   onCollectCoin,
   onCollectStar,
   onUpdateCharacter,
+  onChangeRoom,
   onExitRoom,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -237,6 +436,13 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
   const [jukeboxTrack, setJukeboxTrack] = useState<number>(1);
   const [floatingScores, setFloatingScores] = useState<{ id: string; x: number; y: number; text: string; color: string }[]>([]);
 
+  // 3D Mini-Soccer, Sprint & Emote States
+  const [goalsScored, setGoalsScored] = useState<number>(0);
+  const lastGoalTime = useRef<number>(0);
+  const [sprintMode, setSprintMode] = useState<boolean>(false);
+  const [isDoingEmote, setIsDoingEmote] = useState<'dance' | 'jurus' | 'kick' | null>(null);
+  const [showEmoteMenu, setShowEmoteMenu] = useState<boolean>(false);
+
   // Proximity states
   const [nearVocab, setNearVocab] = useState<VocabItem | null>(null);
   const [nearDoor, setNearDoor] = useState<boolean>(false);
@@ -247,6 +453,13 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
   const [nearJukebox, setNearJukebox] = useState<boolean>(false);
   const [nearMirror, setNearMirror] = useState<boolean>(false);
 
+  // New Theme Proximities
+  const [nearBlackboard, setNearBlackboard] = useState<boolean>(false);
+  const [nearLabBench, setNearLabBench] = useState<boolean>(false);
+  const [nearFireplace, setNearFireplace] = useState<boolean>(false);
+  const [nearBakery, setNearBakery] = useState<boolean>(false);
+  const [nearStargazer, setNearStargazer] = useState<boolean>(false);
+
   const nearVocabRef = useRef<VocabItem | null>(null);
   const nearDoorRef = useRef<boolean>(false);
   const nearChestRef = useRef<boolean>(false);
@@ -256,11 +469,26 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
   const nearJukeboxRef = useRef<boolean>(false);
   const nearMirrorRef = useRef<boolean>(false);
 
-  // Modals for special interactive 3D items
+  const nearBlackboardRef = useRef<boolean>(false);
+  const nearLabBenchRef = useRef<boolean>(false);
+  const nearFireplaceRef = useRef<boolean>(false);
+  const nearBakeryRef = useRef<boolean>(false);
+  const nearStargazerRef = useRef<boolean>(false);
+
+  // Modals for special interactive 3D items & Stations
   const [activeLaptopModal, setActiveLaptopModal] = useState<boolean>(false);
   const [activeBookshelfModal, setActiveBookshelfModal] = useState<boolean>(false);
   const [activeMirrorModal, setActiveMirrorModal] = useState<boolean>(false);
   const [laptopQuizAnswered, setLaptopQuizAnswered] = useState<boolean>(false);
+
+  const [activeBlackboardModal, setActiveBlackboardModal] = useState<boolean>(false);
+  const [blackboardQuizAnswered, setBlackboardQuizAnswered] = useState<boolean>(false);
+  const [activeLabModal, setActiveLabModal] = useState<boolean>(false);
+  const [labExperimentMixed, setLabExperimentMixed] = useState<boolean>(false);
+  const [activeFireplaceModal, setActiveFireplaceModal] = useState<boolean>(false);
+  const [activeBakeryModal, setActiveBakeryModal] = useState<boolean>(false);
+  const [activeStargazerModal, setActiveStargazerModal] = useState<boolean>(false);
+  const [activeRoomSelectModal, setActiveRoomSelectModal] = useState<boolean>(false);
 
   // Mobile virtual joystick states
   const [isJoystickActive, setIsJoystickActive] = useState<boolean>(false);
@@ -346,12 +574,60 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
       audio.playButtonClick();
       setActiveBookshelfModal(true);
       audio.speak("Piece of cake! That means very easy!");
+    } else if (nearBlackboardRef.current) {
+      audio.playButtonClick();
+      setActiveBlackboardModal(true);
+    } else if (nearLabBenchRef.current) {
+      audio.playButtonClick();
+      setActiveLabModal(true);
+    } else if (nearFireplaceRef.current) {
+      audio.playPowerUp();
+      confetti({ particleCount: 35, spread: 60 });
+      spawnScore('🔥 HANGATKAN DIRI DI PERAPIAN! +15 XP', '#F97316', 0, -60);
+      setActiveFireplaceModal(true);
+    } else if (nearBakeryRef.current) {
+      audio.playButtonClick();
+      setActiveBakeryModal(true);
+    } else if (nearStargazerRef.current) {
+      audio.playButtonClick();
+      setActiveStargazerModal(true);
     } else if (nearPetRef.current) {
       handlePetInteract();
     } else if (nearVocabRef.current) {
       handleItemInteract(nearVocabRef.current);
     }
   }, [isChestOpened, handleOpenChest, handleJukeboxInteract, handleItemInteract, handlePetInteract, onExitRoom]);
+
+  // Emote Action Handlers (Dance, Jurus Sahabat Kafa, Rocket Kick)
+  const handlePerformEmote = useCallback((emoteType: 'dance' | 'jurus' | 'kick') => {
+    setIsDoingEmote(emoteType);
+    setShowEmoteMenu(false);
+
+    if (emoteType === 'dance') {
+      audio.playPowerUp();
+      confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
+      spawnScore('🕺 JOGET KEREN 3D! +10 XP', '#EC4899', 0, -70);
+      setTimeout(() => setIsDoingEmote(null), 1800);
+    } else if (emoteType === 'jurus') {
+      audio.playSahabatKafaPower();
+      audio.speakSahabatKafaVoice('Jurus Sahabat Kafa! Pantang Menyerah!');
+      confetti({ particleCount: 80, spread: 100, origin: { y: 0.55 } });
+      spawnScore('👑 JURUS SAHABAT KAFA 3D! +20 XP', '#F59E0B', 0, -80);
+      setTimeout(() => setIsDoingEmote(null), 2200);
+    } else if (emoteType === 'kick') {
+      // Launch soccer ball towards goal (goal is at X: 4.8, Z: 0.5)
+      const b = ballPosRef.current;
+      const dx = 4.8 - b.x;
+      const dz = 0.5 - b.z;
+      const dist = Math.sqrt(dx * dx + dz * dz) || 1;
+      b.vx = (dx / dist) * 10.5;
+      b.vz = (dz / dist) * 10.5;
+      b.vy = 4.2;
+      audio.playKickBall();
+      spawnScore('🚀 TENDANGAN ROKET 3D! ⚽', '#38BDF8', 30, -60);
+      setTimeout(() => setIsDoingEmote(null), 1200);
+    }
+  }, [spawnScore]);
 
   // Touch joystick handlers
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -751,8 +1027,12 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
 
     furnitureGroup.add(mirrorGroup);
 
-    // Furniture models by theme
-    if (room.theme === 'bedroom' || room.theme === 'cabin') {
+    // Thematic 3D Furniture models & Environment elements
+    let dynamicHoloAtom: THREE.Group | null = null;
+    let dynamicFireLight: THREE.PointLight | null = null;
+    let dynamicEarthPlanet: THREE.Mesh | null = null;
+
+    if (room.theme === 'bedroom') {
       // 3D Bed (Trampoline Bounceable!) at X: -2.8, Z: -2.2
       const bedGroup = new THREE.Group();
       bedGroup.position.set(-2.8, 0, -2.2);
@@ -887,17 +1167,368 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
         }
       }
       furnitureGroup.add(shelfGroup);
-    } else {
-      const labGroup = new THREE.Group();
-      labGroup.position.set(-2.4, 0, -2.4);
-      const bench = new THREE.Mesh(
-        new THREE.BoxGeometry(3.6, 1.3, 1.6),
-        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3 })
+    } else if (room.theme === 'classroom') {
+      // 1. Large 3D Classroom Blackboard on Center Back Wall
+      const boardTex = createClassroomBlackboardTexture();
+      const boardMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(5.4, 2.5, 0.08),
+        new THREE.MeshStandardMaterial({ map: boardTex, roughness: 0.8 })
       );
-      bench.position.set(0, 0.65, 0);
-      bench.castShadow = true;
-      labGroup.add(bench);
-      furnitureGroup.add(labGroup);
+      boardMesh.position.set(0, 2.7, -4.32);
+      boardMesh.castShadow = true;
+      boardMesh.receiveShadow = true;
+      furnitureGroup.add(boardMesh);
+
+      // Chalk ledge with chalk sticks & eraser
+      const ledgeMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(5.4, 0.08, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.4 })
+      );
+      ledgeMesh.position.set(0, 1.42, -4.24);
+      furnitureGroup.add(ledgeMesh);
+
+      // 2. Teacher's Podium & Desk at X: 0, Z: -2.6
+      const teacherDesk = new THREE.Group();
+      teacherDesk.position.set(0, 0, -2.6);
+
+      const deskTop = new THREE.Mesh(
+        new THREE.BoxGeometry(2.8, 0.14, 1.3),
+        new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.3 })
+      );
+      deskTop.position.set(0, 1.3, 0);
+      deskTop.castShadow = true;
+      teacherDesk.add(deskTop);
+
+      for (const lx of [-1.25, 1.25]) {
+        for (const lz of [-0.5, 0.5]) {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.3, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+          leg.position.set(lx, 0.65, lz);
+          teacherDesk.add(leg);
+        }
+      }
+
+      // Spinning 3D Earth Globe on Desk
+      const globeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.05, 12), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 }));
+      globeBase.position.set(0.9, 1.4, -0.2);
+      teacherDesk.add(globeBase);
+
+      const globeRing = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.02, 8, 24, Math.PI), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 }));
+      globeRing.position.set(0.9, 1.62, -0.2);
+      globeRing.rotation.z = Math.PI / 4;
+      teacherDesk.add(globeRing);
+
+      const globeBall = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 }));
+      globeBall.position.set(0.9, 1.62, -0.2);
+      teacherDesk.add(globeBall);
+
+      // Golden Trophy Cup on Desk
+      const trophyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.1, 12), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+      trophyBase.position.set(-0.9, 1.42, -0.2);
+      teacherDesk.add(trophyBase);
+      const trophyCup = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.22, 12), new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.9, roughness: 0.1 }));
+      trophyCup.position.set(-0.9, 1.58, -0.2);
+      trophyCup.rotation.x = Math.PI;
+      teacherDesk.add(trophyCup);
+
+      // Red Apple on Teacher's Desk
+      const appleMesh = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 12), new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 }));
+      appleMesh.position.set(0, 1.45, 0.2);
+      teacherDesk.add(appleMesh);
+
+      furnitureGroup.add(teacherDesk);
+
+      // 3. Student Desks & Chairs (Left & Right)
+      for (const sx of [-2.6, 2.6]) {
+        for (const sz of [-0.6, 1.2]) {
+          const sDesk = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.9), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 }));
+          sDesk.position.set(sx, 1.0, sz);
+          sDesk.castShadow = true;
+          furnitureGroup.add(sDesk);
+
+          // Notebook on student desk
+          const noteBook = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.02, 0.45), new THREE.MeshStandardMaterial({ color: sx > 0 ? 0x38bdf8 : 0xec4899 }));
+          noteBook.position.set(sx + 0.2, 1.06, sz);
+          furnitureGroup.add(noteBook);
+
+          // Chair
+          const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.08, 0.8), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+          chairSeat.position.set(sx, 0.55, sz + 0.65);
+          furnitureGroup.add(chairSeat);
+
+          const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.08), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+          chairBack.position.set(sx, 0.95, sz + 1.0);
+          furnitureGroup.add(chairBack);
+        }
+      }
+    } else if (room.theme === 'lab') {
+      // 1. Central Hologram Hexagonal Pedestal at X: 0, Z: -1.8
+      const holoPed = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.1, 1.3, 0.4, 6),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.8 })
+      );
+      holoPed.position.set(0, 0.2, -1.8);
+      holoPed.castShadow = true;
+      furnitureGroup.add(holoPed);
+
+      const holoRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.95, 0.04, 8, 24),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 0.9 })
+      );
+      holoRing.rotation.x = Math.PI / 2;
+      holoRing.position.set(0, 0.42, -1.8);
+      furnitureGroup.add(holoRing);
+
+      // Rotating 3D Holographic Wireframe Atom
+      const atomGroup = new THREE.Group();
+      atomGroup.position.set(0, 1.6, -1.8);
+
+      const atomCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.24, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x22d3ee, emissiveIntensity: 1.0, roughness: 0.1 })
+      );
+      atomGroup.add(atomCore);
+
+      const ringMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8, wireframe: true });
+      for (let r = 0; r < 3; r++) {
+        const oRing = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.02, 6, 24), ringMat);
+        oRing.rotation.set((r * Math.PI) / 3, (r * Math.PI) / 4, 0);
+        atomGroup.add(oRing);
+
+        // Orbiting electron sphere
+        const electron = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+        electron.position.set(Math.cos(r * 2) * 0.65, Math.sin(r * 2) * 0.65, 0);
+        oRing.add(electron);
+      }
+      furnitureGroup.add(atomGroup);
+      dynamicHoloAtom = atomGroup;
+
+      // 2. Twin Stainless Steel Chemistry Benches (Left & Right)
+      for (const bx of [-2.8, 2.8]) {
+        const cBench = new THREE.Mesh(
+          new THREE.BoxGeometry(2.4, 1.25, 1.3),
+          new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.25, metalness: 0.7 })
+        );
+        cBench.position.set(bx, 0.62, -2.5);
+        cBench.castShadow = true;
+        furnitureGroup.add(cBench);
+
+        // Flasks with glowing liquids
+        const flaskColors = bx < 0 ? [0x10b981, 0x06b6d4] : [0xec4899, 0xf59e0b];
+        flaskColors.forEach((col, idx) => {
+          const fx = bx + (idx === 0 ? -0.5 : 0.5);
+          const flask = new THREE.Mesh(
+            new THREE.ConeGeometry(0.16, 0.35, 12),
+            new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.85, transparent: true, opacity: 0.85 })
+          );
+          flask.position.set(fx, 1.42, -2.5);
+          furnitureGroup.add(flask);
+
+          const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.16, 8), new THREE.MeshStandardMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.6 }));
+          neck.position.set(fx, 1.62, -2.5);
+          furnitureGroup.add(neck);
+        });
+
+        // Bunsen burner with blue flame
+        const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.22, 10), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 }));
+        burner.position.set(bx, 1.36, -2.2);
+        furnitureGroup.add(burner);
+
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+        flame.position.set(bx, 1.54, -2.2);
+        furnitureGroup.add(flame);
+      }
+
+      // Science Periodic Poster on Wall
+      const posterTex = createSciencePosterTexture();
+      const posterMesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.2, 0.05), new THREE.MeshStandardMaterial({ map: posterTex }));
+      posterMesh.position.set(4.6, 2.6, -4.35);
+      furnitureGroup.add(posterMesh);
+    } else if (room.theme === 'cabin' || room.theme === 'treehouse') {
+      // 1. Cozy Cobblestone Brick Fireplace at Center Back Wall
+      const fireGroup = new THREE.Group();
+      fireGroup.position.set(0, 0, -4.1);
+
+      const hearth = new THREE.Mesh(
+        new THREE.BoxGeometry(3.4, 2.6, 0.9),
+        new THREE.MeshStandardMaterial({ color: 0x44403c, roughness: 0.9 })
+      );
+      hearth.position.set(0, 1.3, 0);
+      hearth.castShadow = true;
+      fireGroup.add(hearth);
+
+      // Fireplace mantel shelf
+      const mantel = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.2, 1.1), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.4 }));
+      mantel.position.set(0, 2.6, 0);
+      fireGroup.add(mantel);
+
+      // Firebox opening
+      const firebox = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.95 }));
+      firebox.position.set(0, 0.8, 0.28);
+      fireGroup.add(firebox);
+
+      // Glowing Firewood Logs & Embers
+      const logMat = new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.9 });
+      for (let lg = 0; lg < 3; lg++) {
+        const fireLog = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 1.2, 8), logMat);
+        fireLog.rotation.z = Math.PI / 2 + (lg - 1) * 0.25;
+        fireLog.position.set(0, 0.3 + lg * 0.08, 0.3);
+        fireGroup.add(fireLog);
+      }
+
+      // Animated Fire Flame Core
+      const flameCore = new THREE.Mesh(
+        new THREE.ConeGeometry(0.45, 0.8, 10),
+        new THREE.MeshBasicMaterial({ color: 0xf97316 })
+      );
+      flameCore.position.set(0, 0.7, 0.35);
+      fireGroup.add(flameCore);
+
+      const flameInner = new THREE.Mesh(
+        new THREE.ConeGeometry(0.25, 0.5, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      flameInner.position.set(0, 0.65, 0.38);
+      fireGroup.add(flameInner);
+
+      // Warm Fireplace Point Light
+      const fireLight = new THREE.PointLight(0xf97316, 2.5, 9);
+      fireLight.position.set(0, 1.0, 0.8);
+      fireLight.castShadow = true;
+      fireGroup.add(fireLight);
+      dynamicFireLight = fireLight;
+
+      furnitureGroup.add(fireGroup);
+
+      // 2. Rustic Rocking Chair & Log Table
+      const chairGroup = new THREE.Group();
+      chairGroup.position.set(-2.4, 0, -1.8);
+      const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 1.2), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.5 }));
+      chairSeat.position.set(0, 0.6, 0);
+      chairGroup.add(chairSeat);
+      const chairBack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.1), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.5 }));
+      chairBack.position.set(0, 1.2, -0.55);
+      chairGroup.add(chairBack);
+      furnitureGroup.add(chairGroup);
+
+      const rusticTable = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.12, 16), new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.4 }));
+      rusticTable.position.set(2.4, 1.1, -2.0);
+      furnitureGroup.add(rusticTable);
+    } else if (room.theme === 'cafe') {
+      // 1. Bakery Display Glass Showcase at X: -2.2, Z: -2.4
+      const cafeCase = new THREE.Group();
+      cafeCase.position.set(-2.2, 0, -2.4);
+
+      const caseBase = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.0, 1.2), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.4 }));
+      caseBase.position.set(0, 0.5, 0);
+      cafeCase.add(caseBase);
+
+      const caseGlass = new THREE.Mesh(
+        new THREE.BoxGeometry(2.7, 0.8, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0xf1f5f9, transparent: true, opacity: 0.4, roughness: 0.1 })
+      );
+      caseGlass.position.set(0, 1.4, 0);
+      cafeCase.add(caseGlass);
+
+      // 3D Glazed Strawberry Donuts inside showcase
+      const donutColors = [0xf43f5e, 0xec4899, 0xd97706];
+      donutColors.forEach((dc, di) => {
+        const donut = new THREE.Mesh(
+          new THREE.TorusGeometry(0.14, 0.07, 10, 20),
+          new THREE.MeshStandardMaterial({ color: dc, roughness: 0.3 })
+        );
+        donut.rotation.x = Math.PI / 2;
+        donut.position.set(-0.7 + di * 0.7, 1.15, 0);
+        cafeCase.add(donut);
+      });
+
+      // Tiered Strawberry Birthday Cake
+      const cakeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.18, 16), new THREE.MeshStandardMaterial({ color: 0xfdf2e8 }));
+      cakeBase.position.set(0.6, 1.5, 0);
+      cafeCase.add(cakeBase);
+      const cakeTop = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.14, 16), new THREE.MeshStandardMaterial({ color: 0xf43f5e }));
+      cakeTop.position.set(0.6, 1.66, 0);
+      cafeCase.add(cakeTop);
+
+      furnitureGroup.add(cafeCase);
+
+      // 2. Round Bistro Table & Chairs at X: 2.4, Z: -1.2
+      const bistroTable = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.6 }));
+      bistroTable.position.set(2.4, 1.1, -1.2);
+      furnitureGroup.add(bistroTable);
+
+      const coffeeCup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.14, 12), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      coffeeCup.position.set(2.4, 1.2, -1.2);
+      furnitureGroup.add(coffeeCup);
+    } else if (room.theme === 'cockpit' || room.id.includes('vault') || room.id.includes('cockpit')) {
+      // 1. Futuristic Space Panoramic Viewport Window at Back Wall
+      const spaceTex = createSpaceViewportTexture();
+      const viewportMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(6.2, 2.8, 0.1),
+        new THREE.MeshStandardMaterial({ map: spaceTex, roughness: 0.1, emissive: 0x1e1b4b, emissiveIntensity: 0.5 })
+      );
+      viewportMesh.position.set(0, 2.7, -4.32);
+      furnitureGroup.add(viewportMesh);
+
+      // Rotating 3D Earth planet visible in viewport
+      const earthGeo = new THREE.SphereGeometry(0.48, 20, 20);
+      const earthMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4, emissive: 0x0369a1, emissiveIntensity: 0.3 });
+      const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+      earthMesh.position.set(1.6, 2.8, -4.0);
+      furnitureGroup.add(earthMesh);
+      dynamicEarthPlanet = earthMesh;
+
+      // 2. Space Cockpit Console & Command Seats at X: 0, Z: -2.6
+      const consoleMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(4.2, 1.1, 1.2),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.8 })
+      );
+      consoleMesh.position.set(0, 0.55, -2.6);
+      furnitureGroup.add(consoleMesh);
+
+      // Holographic navigation monitors
+      for (const mx of [-1.2, 1.2]) {
+        const monitor = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.6, 0.04),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.9 })
+        );
+        monitor.position.set(mx, 1.35, -2.5);
+        monitor.rotation.x = -0.2;
+        furnitureGroup.add(monitor);
+      }
+
+      // Pilot Command Chairs
+      for (const cx of [-0.9, 0.9]) {
+        const chair = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.7), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 }));
+        chair.position.set(cx, 0.7, -1.4);
+        furnitureGroup.add(chair);
+      }
+    } else {
+      // Secret Attic theme: Stacked antique crates, vintage trunk & astronomical telescope
+      const crateGroup = new THREE.Group();
+      crateGroup.position.set(-2.8, 0, -2.4);
+      for (let cr = 0; cr < 3; cr++) {
+        const crate = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 1.1), new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.6 }));
+        crate.position.set((cr - 1) * 0.7, 0.45 + cr * 0.3, (cr % 2) * 0.3);
+        crateGroup.add(crate);
+      }
+      furnitureGroup.add(crateGroup);
+
+      // Brass Astronomical Telescope on Tripod
+      const teleGroup = new THREE.Group();
+      teleGroup.position.set(2.8, 0, -2.4);
+      for (let leg = 0; leg < 3; leg++) {
+        const ang = (leg * Math.PI * 2) / 3;
+        const tLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 8), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+        tLeg.position.set(Math.cos(ang) * 0.4, 0.9, Math.sin(ang) * 0.4);
+        tLeg.rotation.x = Math.sin(ang) * 0.25;
+        tLeg.rotation.z = -Math.cos(ang) * 0.25;
+        teleGroup.add(tLeg);
+      }
+      const teleTube = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 1.6, 16), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 }));
+      teleTube.rotation.x = Math.PI / 4;
+      teleTube.position.set(0, 1.9, 0.2);
+      teleGroup.add(teleTube);
+      furnitureGroup.add(teleGroup);
     }
 
     scene.add(furnitureGroup);
@@ -931,6 +1562,54 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
     ballMesh.receiveShadow = true;
     ballMesh.position.set(ballPosRef.current.x, ballPosRef.current.y, ballPosRef.current.z);
     scene.add(ballMesh);
+
+    // 6B. 3D MINI SOCCER GOAL ON RIGHT WALL (X: 4.8, Z: 0.5)
+    const goalGroup = new THREE.Group();
+    goalGroup.position.set(4.8, 0, 0.5);
+
+    const goalPostMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.8 });
+    // Left post
+    const postLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.6, 12), goalPostMat);
+    postLeft.position.set(0, 0.8, -1.0);
+    postLeft.castShadow = true;
+    goalGroup.add(postLeft);
+
+    // Right post
+    const postRight = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.6, 12), goalPostMat);
+    postRight.position.set(0, 0.8, 1.0);
+    postRight.castShadow = true;
+    goalGroup.add(postRight);
+
+    // Crossbar
+    const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 2.05, 12), goalPostMat);
+    crossbar.rotation.x = Math.PI / 2;
+    crossbar.position.set(0, 1.6, 0);
+    crossbar.castShadow = true;
+    goalGroup.add(crossbar);
+
+    // Top depth bars
+    const topBackLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.6, 8), goalPostMat);
+    topBackLeft.rotation.z = Math.PI / 2;
+    topBackLeft.position.set(0.3, 1.6, -1.0);
+    goalGroup.add(topBackLeft);
+
+    const topBackRight = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.6, 8), goalPostMat);
+    topBackRight.rotation.z = Math.PI / 2;
+    topBackRight.position.set(0.3, 1.6, 1.0);
+    goalGroup.add(topBackRight);
+
+    // Goal Net wireframe mesh
+    const netGeo = new THREE.BoxGeometry(0.5, 1.55, 2.0);
+    const netMat = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      wireframe: true,
+      roughness: 0.9,
+    });
+    const netMesh = new THREE.Mesh(netGeo, netMat);
+    netMesh.position.set(0.25, 0.8, 0);
+    goalGroup.add(netMesh);
+
+    scene.add(goalGroup);
 
     // 7. CUTE PROCEDURAL 3D ROBO-PET COMPANION ON RUG (X: 1.0, Z: 0.6)
     const petGroup = new THREE.Group();
@@ -1143,7 +1822,8 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
       }
 
       const inputLen = Math.sqrt(moveX * moveX + moveZ * moveZ);
-      const speed = 4.3;
+      const isSprinting = sprintMode || !!keys['shift'];
+      const speed = isSprinting ? 7.2 : 4.3;
       const p = playerPosRef.current;
 
       if (inputLen > 0.1) {
@@ -1154,7 +1834,8 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
         p.rotY = Math.atan2(normX, normZ);
 
         const now = Date.now();
-        if (now - lastFootstep.current > 310 && p.isGrounded) {
+        const stepRate = isSprinting ? 220 : 310;
+        if (now - lastFootstep.current > stepRate && p.isGrounded) {
           lastFootstep.current = now;
           audio.playFootstep();
         }
@@ -1194,7 +1875,7 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
       }
 
       // -------------------------------------------------------------
-      // 3D SOCCER BALL PHYSICS & KICKING
+      // 3D SOCCER BALL PHYSICS, KICKING & GOAL SCORING
       // -------------------------------------------------------------
       const b = ballPosRef.current;
       b.x += b.vx * delta;
@@ -1224,6 +1905,27 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
         b.z = Math.max(-3.4, Math.min(3.8, b.z));
       }
 
+      // 3D Mini-Soccer Goal Detection (Goal at X: 4.8, Z: 0.5, Z-span: [-0.5, 1.5], Height: 1.6)
+      if (b.x > 4.3 && b.x <= 5.2 && b.z >= -0.5 && b.z <= 1.5 && b.y <= 1.6) {
+        const now = Date.now();
+        if (now - lastGoalTime.current > 2000) {
+          lastGoalTime.current = now;
+          setGoalsScored(prev => prev + 1);
+          audio.playPowerUp();
+          audio.speakSahabatKafaVoice('Gool! Hebat sekali Sahabat Kafa!');
+          confetti({ particleCount: 75, spread: 90, origin: { x: 0.75, y: 0.55 } });
+          spawnScore('⚽ GOOOOOL!! +25 KOIN SAHABAT KAFA!', '#F59E0B', 40, -60);
+          onCollectCoin(25);
+          // Rebound ball to center with bounce
+          b.x = 0;
+          b.z = 0.4;
+          b.y = 1.4;
+          b.vx = (Math.random() - 0.5) * 2;
+          b.vz = (Math.random() - 0.5) * 2;
+          b.vy = 2.2;
+        }
+      }
+
       // Check collision between player and ball
       const bdx = b.x - p.x;
       const bdz = b.z - p.z;
@@ -1232,7 +1934,7 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
         const now = Date.now();
         if (now - lastKickTime.current > 240) {
           lastKickTime.current = now;
-          const kickSpeed = Math.max(3.8, Math.sqrt(p.vx * p.vx + p.vz * p.vz) * 1.6);
+          const kickSpeed = Math.max(4.0, Math.sqrt(p.vx * p.vx + p.vz * p.vz) * (isSprinting ? 2.0 : 1.6));
           const kickDirX = bdist > 0.05 ? bdx / bdist : 1;
           const kickDirZ = bdist > 0.05 ? bdz / bdist : 0;
           b.vx = kickDirX * kickSpeed;
@@ -1242,6 +1944,26 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
           spawnScore('⚽ TENDANG BOLA! +5 XP', '#38BDF8', 30, -50);
           onCollectCoin(1);
         }
+      }
+
+      // Dynamic thematic models animations
+      if (dynamicHoloAtom) {
+        dynamicHoloAtom.rotation.y += delta * 1.8;
+        dynamicHoloAtom.rotation.x += delta * 1.1;
+      }
+      if (dynamicFireLight) {
+        dynamicFireLight.intensity = 2.2 + Math.sin(time * 14) * 0.45 + Math.random() * 0.2;
+      }
+      if (dynamicEarthPlanet) {
+        dynamicEarthPlanet.rotation.y += delta * 0.6;
+      }
+
+      // Emote character animation overrides
+      if (isDoingEmote === 'dance') {
+        p.rotY += delta * 14;
+        bodyRoot.position.y = p.y + Math.abs(Math.sin(time * 16)) * 0.35;
+      } else if (isDoingEmote === 'jurus') {
+        bodyRoot.position.y = p.y + 0.25 + Math.sin(time * 8) * 0.08;
       }
 
       // Rotate ball based on velocity
@@ -1377,28 +2099,86 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
         setNearPet(petDistNow);
       }
 
+      // Proximity: Classroom Blackboard (X: 0, Z: -3.8)
+      const isClassroom = room.theme === 'classroom';
+      const bbDist = Math.sqrt(p.x * p.x + (p.z - -3.8) * (p.z - -3.8));
+      const nearBbNow = isClassroom && bbDist < 1.9;
+      if (nearBbNow !== nearBlackboardRef.current) {
+        nearBlackboardRef.current = nearBbNow;
+        setNearBlackboard(nearBbNow);
+      }
+
+      // Proximity: Science Lab Bench (X: -2.8, Z: -2.4 or X: 2.8, Z: -2.4)
+      const isLab = room.theme === 'lab';
+      const labDistL = Math.sqrt((p.x - -2.8) * (p.x - -2.8) + (p.z - -2.4) * (p.z - -2.4));
+      const labDistR = Math.sqrt((p.x - 2.8) * (p.x - 2.8) + (p.z - -2.4) * (p.z - -2.4));
+      const nearLabNow = isLab && (labDistL < 1.8 || labDistR < 1.8);
+      if (nearLabNow !== nearLabBenchRef.current) {
+        nearLabBenchRef.current = nearLabNow;
+        setNearLabBench(nearLabNow);
+      }
+
+      // Proximity: Fireplace (X: 0, Z: -3.6)
+      const isCabin = room.theme === 'cabin' || room.theme === 'treehouse';
+      const fireDist = Math.sqrt(p.x * p.x + (p.z - -3.6) * (p.z - -3.6));
+      const nearFireNow = isCabin && fireDist < 1.9;
+      if (nearFireNow !== nearFireplaceRef.current) {
+        nearFireplaceRef.current = nearFireNow;
+        setNearFireplace(nearFireNow);
+      }
+
+      // Proximity: Cafe Bakery Counter (X: -2.2, Z: -2.2)
+      const isCafe = room.theme === 'cafe';
+      const cafeDist = Math.sqrt((p.x - -2.2) * (p.x - -2.2) + (p.z - -2.2) * (p.z - -2.2));
+      const nearCafeNow = isCafe && cafeDist < 1.8;
+      if (nearCafeNow !== nearBakeryRef.current) {
+        nearBakeryRef.current = nearCafeNow;
+        setNearBakery(nearCafeNow);
+      }
+
+      // Proximity: Stargazer Cockpit (X: 0, Z: -2.6)
+      const isCockpit = room.theme === 'cockpit' || room.id.includes('vault') || room.id.includes('cockpit');
+      const starDist = Math.sqrt(p.x * p.x + (p.z - -2.6) * (p.z - -2.6));
+      const nearStarNow = isCockpit && starDist < 1.8;
+      if (nearStarNow !== nearStargazerRef.current) {
+        nearStargazerRef.current = nearStarNow;
+        setNearStargazer(nearStarNow);
+      }
+
       // Camera follow modes
-      if (cameraMode === 'isometric') {
-        const targetCamX = p.x * 0.45;
-        const targetCamZ = p.z * 0.45 + 10.5;
-        camera.position.x = THREE.MathUtils.damp(camera.position.x, targetCamX, 4, delta);
-        camera.position.y = THREE.MathUtils.damp(camera.position.y, 9.5, 4, delta);
-        camera.position.z = THREE.MathUtils.damp(camera.position.z, targetCamZ, 4, delta);
-        camera.lookAt(p.x * 0.3, 1.2, p.z * 0.3);
-      } else if (cameraMode === 'orbit') {
-        const radius = 12;
-        const cx = Math.sin(orbitAngle.current.theta) * Math.sin(orbitAngle.current.phi) * radius;
-        const cy = Math.cos(orbitAngle.current.phi) * radius;
-        const cz = Math.cos(orbitAngle.current.theta) * Math.sin(orbitAngle.current.phi) * radius;
-        camera.position.set(cx, Math.max(2, cy), cz);
-        camera.lookAt(0, 1.2, 0);
+      if (cameraMode === 'firstPerson') {
+        charGroup.visible = false;
+        camera.position.x = p.x;
+        camera.position.y = p.y + 1.42;
+        camera.position.z = p.z;
+        const lookX = p.x + Math.sin(p.rotY) * 5;
+        const lookZ = p.z + Math.cos(p.rotY) * 5;
+        camera.lookAt(lookX, p.y + 1.35, lookZ);
       } else {
-        const camOffsetZ = Math.cos(p.rotY) * -3.2;
-        const camOffsetX = Math.sin(p.rotY) * -3.2;
-        camera.position.x = THREE.MathUtils.damp(camera.position.x, p.x + camOffsetX, 5, delta);
-        camera.position.y = THREE.MathUtils.damp(camera.position.y, p.y + 2.8, 5, delta);
-        camera.position.z = THREE.MathUtils.damp(camera.position.z, p.z + camOffsetZ, 5, delta);
-        camera.lookAt(p.x, p.y + 1.4, p.z);
+        charGroup.visible = true;
+        if (cameraMode === 'isometric') {
+          const targetCamX = p.x * 0.45;
+          const targetCamZ = p.z * 0.45 + 10.5;
+          camera.position.x = THREE.MathUtils.damp(camera.position.x, targetCamX, 4, delta);
+          camera.position.y = THREE.MathUtils.damp(camera.position.y, 9.5, 4, delta);
+          camera.position.z = THREE.MathUtils.damp(camera.position.z, targetCamZ, 4, delta);
+          camera.lookAt(p.x * 0.3, 1.2, p.z * 0.3);
+        } else if (cameraMode === 'orbit') {
+          const radius = 12;
+          const cx = Math.sin(orbitAngle.current.theta) * Math.sin(orbitAngle.current.phi) * radius;
+          const cy = Math.cos(orbitAngle.current.phi) * radius;
+          const cz = Math.cos(orbitAngle.current.theta) * Math.sin(orbitAngle.current.phi) * radius;
+          camera.position.set(cx, Math.max(2, cy), cz);
+          camera.lookAt(0, 1.2, 0);
+        } else {
+          // cinematic
+          const camOffsetZ = Math.cos(p.rotY) * -3.2;
+          const camOffsetX = Math.sin(p.rotY) * -3.2;
+          camera.position.x = THREE.MathUtils.damp(camera.position.x, p.x + camOffsetX, 5, delta);
+          camera.position.y = THREE.MathUtils.damp(camera.position.y, p.y + 2.8, 5, delta);
+          camera.position.z = THREE.MathUtils.damp(camera.position.z, p.z + camOffsetZ, 5, delta);
+          camera.lookAt(p.x, p.y + 1.4, p.z);
+        }
       }
 
       renderer.render(scene, camera);
@@ -1444,18 +2224,45 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
     >
       {/* TOP HEADER: ROOM INFO, 3D CAMERA MODES, ATMOSPHERE SWITCHER, LIGHT, DISCO, EXIT */}
       <div className="absolute top-3 left-3 right-3 z-40 flex items-center justify-between pointer-events-auto">
-        <div className="flex items-center gap-2.5 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border-2 border-amber-400/80 text-white shadow-2xl">
-          <span className="text-2xl animate-pulse">🚪</span>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black text-amber-300 font-game tracking-wider uppercase">
-                {room.nameId}
-              </span>
-              <span className="text-[9px] px-1.5 py-0.2 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black rounded font-game shadow">
-                REAL 3D
-              </span>
+        <div className="flex items-center gap-2">
+          {/* Room Title */}
+          <div className="flex items-center gap-2.5 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border-2 border-amber-400/80 text-white shadow-2xl">
+            <span className="text-2xl animate-pulse">🚪</span>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-amber-300 font-game tracking-wider uppercase">
+                  {room.nameId}
+                </span>
+                <span className="text-[9px] px-1.5 py-0.2 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black rounded font-game shadow">
+                  REAL 3D
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-300">{room.subtitleId}</div>
             </div>
-            <div className="text-[10px] text-slate-300">{room.subtitleId}</div>
+          </div>
+
+          {/* Quick 3D Room Teleport Switcher Button */}
+          {allRooms && allRooms.length > 0 && onChangeRoom && (
+            <button
+              onClick={() => {
+                audio.playButtonClick();
+                setActiveRoomSelectModal(true);
+              }}
+              className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-2xl border-2 border-indigo-400 shadow-xl font-game font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              title="Pindah ke Ruangan 3D Lainnya"
+            >
+              <span>🧭</span>
+              <span className="hidden md:inline">PILIH RUANGAN</span>
+              <span className="text-[10px] bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded font-black">
+                {allRooms.length}
+              </span>
+            </button>
+          )}
+
+          {/* Mini Soccer Scoreboard Badge */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-2xl border-2 border-emerald-400/80 text-emerald-300 font-game font-bold text-xs shadow-xl">
+            <span className="text-base">⚽</span>
+            <span>GOL: <strong className="text-amber-300 font-black text-sm">{goalsScored}</strong></span>
           </div>
         </div>
 
@@ -1532,7 +2339,7 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
                 audio.playButtonClick();
                 setCameraMode('isometric');
               }}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-game font-bold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[10px] font-game font-bold transition-all cursor-pointer ${
                 cameraMode === 'isometric' ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-slate-300 hover:text-white'
               }`}
               title="Kamera Sudut 3D Isometrik"
@@ -1544,7 +2351,7 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
                 audio.playButtonClick();
                 setCameraMode('orbit');
               }}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-game font-bold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[10px] font-game font-bold transition-all cursor-pointer ${
                 cameraMode === 'orbit' ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-slate-300 hover:text-white'
               }`}
               title="Putar Kamera 360 Derajat Bebas"
@@ -1556,12 +2363,25 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
                 audio.playButtonClick();
                 setCameraMode('cinematic');
               }}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-game font-bold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[10px] font-game font-bold transition-all cursor-pointer ${
                 cameraMode === 'cinematic' ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-slate-300 hover:text-white'
               }`}
               title="Kamera Sinematik Dekat"
             >
               🎬 DEKAT
+            </button>
+            <button
+              onClick={() => {
+                audio.playButtonClick();
+                setCameraMode('firstPerson');
+                spawnScore('👁️ Mode Orang Pertama (FPS)!', '#38BDF8', 0, -40);
+              }}
+              className={`px-2 py-1 rounded-lg text-[10px] font-game font-bold transition-all cursor-pointer ${
+                cameraMode === 'firstPerson' ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-slate-300 hover:text-white'
+              }`}
+              title="Sudut Pandang Orang Pertama (FPS)"
+            >
+              👁️ FPS
             </button>
           </div>
 
@@ -1597,7 +2417,7 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
 
       {/* FLOATING ACTION BANNER PROMPT (PROXIMITY CONTEXTUAL BADGE) */}
       <AnimatePresence>
-        {(nearVocab || nearDoor || (nearChest && !isChestOpened) || nearLaptop || nearBookshelf || nearPet || nearJukebox || nearMirror) && (
+        {(nearVocab || nearDoor || (nearChest && !isChestOpened) || nearLaptop || nearBookshelf || nearPet || nearJukebox || nearMirror || nearBlackboard || nearLabBench || nearFireplace || nearBakery || nearStargazer) && (
           <motion.div
             initial={{ opacity: 0, y: 15, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1616,6 +2436,16 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
                   ? '🚪 KELUAR KE DUNIA PETUALANGAN'
                   : nearChest
                   ? '🎁 BUKA PETI HARTA RAHASIA (+20 🪙 +1 ⭐)'
+                  : nearBlackboard
+                  ? '🎓 BUKA KUIS PAPAN TULIS SD (+30 XP +1 ⭐)'
+                  : nearLabBench
+                  ? '🧪 EKSPERIMEN RAMUAN SAINS (+25 XP +10 🪙)'
+                  : nearFireplace
+                  ? '🔥 HANGATKAN DIRI DI PERAPIAN (+15 XP 💖)'
+                  : nearBakery
+                  ? '☕ CICIPI ROTI & DONAT LEZAT (+20 XP +10 🪙)'
+                  : nearStargazer
+                  ? '🔭 TEROPONG BINTANG & PLANET (+35 XP ⭐)'
                   : nearJukebox
                   ? `📻 PUTAR RADIO JUKEBOX 3D (Lagu #${jukeboxTrack})`
                   : nearMirror
@@ -1904,6 +2734,424 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
         )}
       </AnimatePresence>
 
+      {/* INTERACTIVE CLASSROOM BLACKBOARD QUIZ MODAL */}
+      <AnimatePresence>
+        {activeBlackboardModal && (
+          <div className="fixed inset-0 z-[800] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              className="w-full max-w-md bg-emerald-950 border-4 border-amber-400 rounded-3xl p-6 shadow-2xl text-white font-sans"
+            >
+              <div className="flex items-center justify-between mb-4 border-b border-emerald-700/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🎓</span>
+                  <div>
+                    <h3 className="font-game font-black text-amber-300 text-base">PAPAN TULIS KUIS SD</h3>
+                    <p className="text-xs text-emerald-200">Kuis Cepat Matematika & Bahasa Inggris</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setActiveBlackboardModal(false);
+                    setBlackboardQuizAnswered(false);
+                  }}
+                  className="w-8 h-8 rounded-full bg-emerald-900 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="bg-emerald-900/80 p-4 rounded-2xl border-2 border-emerald-600/40 mb-4 font-game text-xs text-white">
+                <div className="text-amber-300 font-bold mb-1">📝 Soal Ceria Sahabat Kafa:</div>
+                <p className="text-sm font-black mb-2">
+                  "Di kelas, seorang <span className="text-yellow-300">TEACHER</span> bertugas mendidik siswa. Apa arti kata <u>TEACHER</u>?"
+                </p>
+                <div className="text-[11px] text-emerald-200 italic">
+                  Bonus Math: Berapakah hasil dari 25 + 75?
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-5">
+                {[
+                  { label: 'A. Guru (dan 25 + 75 = 100)', correct: true },
+                  { label: 'B. Murid Sekolah (dan 25 + 75 = 90)', correct: false },
+                  { label: 'C. Dokter Hewan (dan 25 + 75 = 80)', correct: false },
+                ].map((opt, i) => (
+                  <button
+                    key={i}
+                    disabled={blackboardQuizAnswered}
+                    onClick={() => {
+                      setBlackboardQuizAnswered(true);
+                      if (opt.correct) {
+                        audio.playPowerUp();
+                        audio.speakSahabatKafaVoice('Jawabanmu tepat sekali!');
+                        confetti({ particleCount: 70, spread: 80 });
+                        onCollectCoin(10);
+                        onCollectStar(1);
+                        spawnScore('BENAR SEKALI! +30 XP +1 ⭐ +10 🪙', '#10B981', 0, -80);
+                      } else {
+                        audio.playBlockBump();
+                        spawnScore('Jawaban belum tepat, coba lagi ya!', '#EF4444', 0, -80);
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 border-2 border-emerald-600 hover:border-amber-400 text-left text-xs font-bold font-game transition-all cursor-pointer"
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  setActiveBlackboardModal(false);
+                  setBlackboardQuizAnswered(false);
+                }}
+                className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black font-game text-xs transition-all shadow-lg cursor-pointer"
+              >
+                TUTUP PAPAN TULIS ✨
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* INTERACTIVE SCIENCE LAB POTION EXPERIMENT MODAL */}
+        {activeLabModal && (
+          <div className="fixed inset-0 z-[800] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              className="w-full max-w-md bg-slate-900 border-4 border-cyan-400 rounded-3xl p-6 shadow-2xl text-white font-sans"
+            >
+              <div className="flex items-center justify-between mb-4 border-b border-cyan-700/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🧪</span>
+                  <div>
+                    <h3 className="font-game font-black text-cyan-300 text-base">LABORATORIUM EKSPERIMEN</h3>
+                    <p className="text-xs text-slate-400">Pencampuran Senyawa & Robotika</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setActiveLabModal(false);
+                    setLabExperimentMixed(false);
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="bg-slate-950 p-4 rounded-2xl border border-cyan-500/40 mb-4 text-center">
+                <div className="flex items-center justify-center gap-3 text-4xl mb-2">
+                  <span>⚛️</span>
+                  <span>➕</span>
+                  <span>⚡</span>
+                  <span>🟰</span>
+                  <span>✨</span>
+                </div>
+                <div className="font-game font-black text-cyan-300 text-sm mb-1">
+                  RAMUAN ENERGI SAHABAT KAFA
+                </div>
+                <p className="text-xs text-slate-300">
+                  Campurkan kristal atom neon dan energi surya untuk menciptakan dorongan kecepatan robotik!
+                </p>
+              </div>
+
+              {!labExperimentMixed ? (
+                <button
+                  onClick={() => {
+                    setLabExperimentMixed(true);
+                    audio.playPowerUp();
+                    audio.speakSahabatKafaVoice('Eksperimen sains berhasil!');
+                    confetti({ particleCount: 80, spread: 90 });
+                    onCollectCoin(15);
+                    spawnScore('EKSPERIMEN SUKSES! +25 XP +15 🪙', '#06B6D4', 0, -80);
+                  }}
+                  className="w-full py-3 mb-3 rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-400 to-blue-500 hover:from-cyan-400 text-slate-950 font-black font-game text-sm shadow-[0_0_20px_rgba(6,182,212,0.6)] cursor-pointer active:scale-95 transition-all"
+                >
+                  ⚗️ MULAI CAMPURKAN SENYAWA!
+                </button>
+              ) : (
+                <div className="p-3 bg-cyan-950/80 border border-cyan-400/50 rounded-2xl text-center mb-3 text-xs text-cyan-200 font-game">
+                  ✅ Ramuan aktif! Hero robotik Anda bersinar dengan kekuatan penuh!
+                </div>
+              )}
+
+              <button
+                onClick={() => {
+                  setActiveLabModal(false);
+                  setLabExperimentMixed(false);
+                }}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-game text-xs font-bold cursor-pointer"
+              >
+                KEMBALI KE LAB
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* INTERACTIVE CABIN FIREPLACE WARM-UP MODAL */}
+        {activeFireplaceModal && (
+          <div className="fixed inset-0 z-[800] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              className="w-full max-w-md bg-stone-900 border-4 border-orange-500 rounded-3xl p-6 shadow-2xl text-white font-sans"
+            >
+              <div className="flex items-center justify-between mb-4 border-b border-stone-700 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🔥</span>
+                  <div>
+                    <h3 className="font-game font-black text-orange-400 text-base">PERAPIAN PONDOK HANGAT</h3>
+                    <p className="text-xs text-stone-400">Tempat Beristirahat & Memulihkan Tenaga</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveFireplaceModal(false)}
+                  className="w-8 h-8 rounded-full bg-stone-800 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-950/80 to-stone-950 p-5 rounded-2xl border border-orange-500/30 text-center mb-4">
+                <span className="text-5xl block mb-2 animate-bounce">🏕️</span>
+                <div className="font-game font-black text-amber-300 text-base mb-1">
+                  "Menghangatkan Diri di Perapian Kayu"
+                </div>
+                <p className="text-xs text-stone-300 leading-relaxed">
+                  Kayu bakar berderak hangat menenangkan jiwa petualang. Sahabat Kafa siap melanjutkan perjalanan ke pelosok pulau!
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  audio.playPowerUp();
+                  audio.speakSahabatKafaVoice('Tenagamu sudah pulih!');
+                  confetti({ particleCount: 40, spread: 60 });
+                  onCollectCoin(10);
+                  spawnScore('💖 ENERGI PULIH TOTAL! +15 XP', '#F97316', 0, -70);
+                  setActiveFireplaceModal(false);
+                }}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-slate-950 font-black font-game text-sm shadow-xl cursor-pointer active:scale-95 transition-all"
+              >
+                ☕ MINUM COKLAT HANGAT (+15 XP)
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* INTERACTIVE CAFE BAKERY MODAL */}
+        {activeBakeryModal && (
+          <div className="fixed inset-0 z-[800] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              className="w-full max-w-md bg-slate-900 border-4 border-pink-500 rounded-3xl p-6 shadow-2xl text-white font-sans"
+            >
+              <div className="flex items-center justify-between mb-4 border-b border-pink-700/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">☕</span>
+                  <div>
+                    <h3 className="font-game font-black text-pink-300 text-base">TOKO ROTI & KAFE MANIS</h3>
+                    <p className="text-xs text-slate-400">Roti Panggang Segar & Donat Stroberi</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveBakeryModal(false)}
+                  className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {[
+                  { name: 'Donat Stroberi 🍩', xp: 20, coins: 10, quote: 'Manis dan lezat!' },
+                  { name: 'Roti Baguette 🥖', xp: 20, coins: 10, quote: 'Renyah di luar, empuk di dalam!' },
+                  { name: 'Kopi Susu Hangat ☕', xp: 25, coins: 12, quote: 'Memberi semangat belajar!' },
+                  { name: 'Kue Ulang Tahun 🍰', xp: 30, coins: 15, quote: 'Kue lembut krim vanilla!' },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      audio.playPowerUp();
+                      confetti({ particleCount: 45, spread: 70 });
+                      onCollectCoin(item.coins);
+                      spawnScore(`NYAM! ${item.name}! +${item.xp} XP +${item.coins} 🪙`, '#EC4899', 0, -70);
+                      setActiveBakeryModal(false);
+                    }}
+                    className="p-3 bg-slate-800/90 hover:bg-pink-600/30 border border-slate-700 hover:border-pink-400 rounded-2xl text-left transition-all cursor-pointer active:scale-95"
+                  >
+                    <div className="text-xs font-black font-game text-pink-300 mb-1">{item.name}</div>
+                    <div className="text-[10px] text-slate-300 mb-1">{item.quote}</div>
+                    <div className="text-[9px] text-amber-300 font-bold">+{item.xp} XP • +{item.coins} 🪙</div>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setActiveBakeryModal(false)}
+                className="w-full py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-game text-xs font-bold cursor-pointer"
+              >
+                TUTUP ETALASE KAFE
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* INTERACTIVE STARGAZER SPACE MODAL */}
+        {activeStargazerModal && (
+          <div className="fixed inset-0 z-[800] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              className="w-full max-w-md bg-indigo-950 border-4 border-cyan-400 rounded-3xl p-6 shadow-2xl text-white font-sans"
+            >
+              <div className="flex items-center justify-between mb-4 border-b border-indigo-700/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🔭</span>
+                  <div>
+                    <h3 className="font-game font-black text-cyan-300 text-base">OBSERVATORIUM ANTARIKSA</h3>
+                    <p className="text-xs text-indigo-200">Jendela Galaksi & Rasi Bintang</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveStargazerModal(false)}
+                  className="w-8 h-8 rounded-full bg-indigo-900 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="bg-slate-950 p-4 rounded-2xl border border-cyan-400/40 mb-4 text-center">
+                <span className="text-5xl block mb-2">🌍 🛰️ ✨</span>
+                <div className="font-game font-black text-amber-300 text-sm mb-1">
+                  PLANET BUMI & GAYA GRAVITASI
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  Dari kokpit ini, planet Bumi tampak biru memesona karena 71% permukaannya diselimuti air laut.
+                </p>
+                <div className="p-2.5 bg-indigo-900/40 rounded-xl text-[11px] text-cyan-200 font-mono">
+                  English: "Earth revolves around the Sun every 365 days!"
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  audio.playPowerUp();
+                  audio.speakSahabatKafaVoice('Pengetahuan antariksa hebat!');
+                  confetti({ particleCount: 60, spread: 80 });
+                  onCollectStar(1);
+                  spawnScore('DATA ASTRONOMI TERCATAT! +35 XP +1 ⭐', '#38BDF8', 0, -80);
+                  setActiveStargazerModal(false);
+                }}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:from-cyan-400 text-slate-950 font-black font-game text-sm shadow-xl cursor-pointer active:scale-95 transition-all"
+              >
+                🛰️ SIMPAN PETA BINTANG (+35 XP +1 ⭐)
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 3D ROOM INSTANT TELEPORT SWITCHER MODAL (10 ROOMS) */}
+        {activeRoomSelectModal && allRooms && (
+          <div className="fixed inset-0 z-[850] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              className="w-full max-w-2xl bg-slate-900 border-4 border-amber-400 rounded-3xl p-6 shadow-2xl text-white font-sans max-h-[88vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-4 border-b border-slate-700 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🧭</span>
+                  <div>
+                    <h3 className="font-game font-black text-amber-300 text-lg">PILIH RUANGAN 3D EKSPLORASI</h3>
+                    <p className="text-xs text-slate-400">Pindah Seketika ke Berbagai Ruangan 3D Keren</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveRoomSelectModal(false)}
+                  className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto pr-1 flex-1 py-1">
+                {allRooms.map((rm) => {
+                  const isCurrent = rm.id === room.id;
+                  const icon =
+                    rm.theme === 'bedroom'
+                      ? '🛏️'
+                      : rm.theme === 'attic'
+                      ? '🗝️'
+                      : rm.theme === 'classroom'
+                      ? '🏫'
+                      : rm.theme === 'lab'
+                      ? '🔬'
+                      : rm.theme === 'cafe'
+                      ? '☕'
+                      : rm.theme === 'cabin'
+                      ? '🏡'
+                      : rm.theme === 'treehouse'
+                      ? '🏕️'
+                      : '🚀';
+
+                  return (
+                    <button
+                      key={rm.id}
+                      onClick={() => {
+                        audio.playDoorOpen();
+                        onChangeRoom?.(rm.id);
+                        setActiveRoomSelectModal(false);
+                      }}
+                      className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center justify-between cursor-pointer active:scale-95 ${
+                        isCurrent
+                          ? 'bg-amber-500/20 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                          : 'bg-slate-800/90 border-slate-700 hover:border-amber-400 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{icon}</span>
+                        <div>
+                          <div className="font-game font-black text-xs text-white flex items-center gap-1.5">
+                            <span>{rm.nameId}</span>
+                            {isCurrent && (
+                              <span className="text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded font-black">
+                                AKTIF
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-400">{rm.subtitleId}</div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-amber-300 font-bold">MASUK ➔</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-800 flex justify-end">
+                <button
+                  onClick={() => setActiveRoomSelectModal(false)}
+                  className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-game font-bold text-xs cursor-pointer"
+                >
+                  TUTUP
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* FLOATING POPUP SCORES */}
       {floatingScores.map(score => (
         <motion.div
@@ -1950,30 +3198,128 @@ export const Room3DView: React.FC<Room3DViewProps> = ({
             <div className="text-slate-400">💡 Tendang Bola ⚽ • Jukebox 📻 • Cermin Kostum 🪞 • Tempat Tidur 🛏️</div>
           </div>
 
-          {/* Action Buttons: Jump & Interact */}
-          <div className="flex items-center gap-2.5 pointer-events-auto">
+          {/* Action Buttons: Sprint, Emote, Interact & Jump */}
+          <div className="flex items-center gap-2 sm:gap-2.5 pointer-events-auto">
+            {/* Sprint / Turbo Run Toggle Button */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                audio.playButtonClick();
+                setSprintMode(!sprintMode);
+                spawnScore(!sprintMode ? '⚡ LARI CEPAT 3D AKTIF!' : '🚶 JALAN BIASA', '#F59E0B', 0, -50);
+              }}
+              className={`w-13 h-13 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center font-bold text-xs shadow-2xl transition-all border-2 cursor-pointer ${
+                sprintMode
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 border-white ring-4 ring-amber-300 animate-pulse'
+                  : 'bg-slate-900/80 text-amber-300 border-amber-400/50 hover:border-amber-400'
+              }`}
+              title="Toggle Lari Cepat 3D (Shift)"
+            >
+              <span className="text-lg sm:text-xl">⚡</span>
+              <span className="font-game text-[8px] sm:text-[9px] uppercase font-black">
+                {sprintMode ? 'SPRINT' : 'LARI'}
+              </span>
+            </motion.button>
+
+            {/* Emote Actions Menu Button */}
+            <div className="relative">
+              {showEmoteMenu && (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0, y: 10 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  className="absolute bottom-16 sm:bottom-20 right-0 mb-2 w-52 bg-slate-900/95 backdrop-blur-md rounded-2xl border-2 border-purple-400 p-2 shadow-2xl flex flex-col gap-1.5 z-50 text-white font-game"
+                >
+                  <div className="text-[10px] text-purple-300 font-bold px-2 py-0.5 border-b border-purple-500/30 flex items-center justify-between">
+                    <span>✨ AKSI HERO 3D:</span>
+                    <button
+                      onClick={() => setShowEmoteMenu(false)}
+                      className="text-xs text-slate-400 hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => handlePerformEmote('dance')}
+                    className="w-full text-left px-2.5 py-2 rounded-xl bg-slate-800/90 hover:bg-pink-500 hover:text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <span className="text-base">💃</span>
+                    <div>
+                      <div className="font-black">Joget Putar 360°</div>
+                      <div className="text-[9px] text-pink-300">Sparks & Disco Flip!</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => handlePerformEmote('jurus')}
+                    className="w-full text-left px-2.5 py-2 rounded-xl bg-slate-800/90 hover:bg-amber-500 hover:text-slate-950 text-xs font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <span className="text-base">👑</span>
+                    <div>
+                      <div className="font-black text-amber-300">Jurus Sahabat Kafa!</div>
+                      <div className="text-[9px] text-amber-200">Aura Emas & Suara Hero</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => handlePerformEmote('kick')}
+                    className="w-full text-left px-2.5 py-2 rounded-xl bg-slate-800/90 hover:bg-cyan-500 hover:text-slate-950 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <span className="text-base">🚀</span>
+                    <div>
+                      <div className="font-black">Tendangan Roket ⚽</div>
+                      <div className="text-[9px] text-cyan-300">Tembak Langsung ke Gawang!</div>
+                    </div>
+                  </button>
+                </motion.div>
+              )}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowEmoteMenu(!showEmoteMenu)}
+                className={`w-13 h-13 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center font-bold text-xs shadow-2xl transition-all border-2 cursor-pointer ${
+                  showEmoteMenu
+                    ? 'bg-purple-600 text-white border-white ring-4 ring-purple-300'
+                    : 'bg-slate-900/80 text-purple-300 border-purple-400/50 hover:border-purple-400'
+                }`}
+                title="Menu Aksi Keren Hero 3D"
+              >
+                <span className="text-lg sm:text-xl">✨</span>
+                <span className="font-game text-[8px] sm:text-[9px] uppercase font-black">AKSI</span>
+              </motion.button>
+            </div>
+
             {/* Interact Button */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={triggerInteraction}
-              className={`w-16 h-16 md:w-18 md:h-18 rounded-full flex flex-col items-center justify-center font-bold text-xs shadow-2xl transition-all border-2 cursor-pointer ${
-                nearVocab || nearDoor || nearChest || nearLaptop || nearBookshelf || nearPet || nearJukebox || nearMirror
+              className={`w-14 h-14 sm:w-18 sm:h-18 rounded-full flex flex-col items-center justify-center font-bold text-xs shadow-2xl transition-all border-2 cursor-pointer ${
+                nearVocab ||
+                nearDoor ||
+                nearChest ||
+                nearLaptop ||
+                nearBookshelf ||
+                nearPet ||
+                nearJukebox ||
+                nearMirror ||
+                nearBlackboard ||
+                nearLabBench ||
+                nearFireplace ||
+                nearBakery ||
+                nearStargazer
                   ? 'bg-amber-400 text-slate-950 border-white ring-4 ring-amber-300 animate-pulse'
                   : 'bg-slate-900/80 text-slate-300 border-slate-700'
               }`}
             >
-              <span className="text-xl">🔍</span>
-              <span className="font-game text-[9px] uppercase font-black">AKSI</span>
+              <span className="text-lg sm:text-xl">🔍</span>
+              <span className="font-game text-[8px] sm:text-[9px] uppercase font-black">SENTUH</span>
             </motion.button>
 
             {/* Jump Button */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={triggerJump}
-              className="w-16 h-16 md:w-18 md:h-18 rounded-full bg-slate-900/80 text-white font-bold text-xs shadow-2xl border-2 border-slate-700 flex flex-col items-center justify-center active:scale-95 cursor-pointer hover:border-emerald-400"
+              className="w-14 h-14 sm:w-18 sm:h-18 rounded-full bg-slate-900/80 text-white font-bold text-xs shadow-2xl border-2 border-slate-700 flex flex-col items-center justify-center active:scale-95 cursor-pointer hover:border-emerald-400"
             >
-              <span className="text-xl">🦘</span>
-              <span className="font-game text-[9px] uppercase font-black">LOMPAT</span>
+              <span className="text-lg sm:text-xl">🦘</span>
+              <span className="font-game text-[8px] sm:text-[9px] uppercase font-black">LOMPAT</span>
             </motion.button>
           </div>
         </div>

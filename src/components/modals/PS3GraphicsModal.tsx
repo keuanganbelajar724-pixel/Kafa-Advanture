@@ -38,6 +38,7 @@ export const PS3GraphicsModal: React.FC<PS3GraphicsModalProps> = ({
   const enableAll = () => {
     audio.playPowerUp();
     onUpdateSettings({
+      ...settings,
       cleanBackgroundMode: true,
       bloomGlow: true,
       volumetricRays: true,
@@ -46,12 +47,15 @@ export const PS3GraphicsModal: React.FC<PS3GraphicsModalProps> = ({
       cinematicVignette: true,
       dualshockPrompts: true,
       highDefShadows: true,
+      floorReflections: true,
+      impactJuice: true,
     });
   };
 
   const enableStandard = () => {
     audio.playButtonClick();
     onUpdateSettings({
+      ...settings,
       cleanBackgroundMode: true,
       bloomGlow: false,
       volumetricRays: false,
@@ -60,6 +64,8 @@ export const PS3GraphicsModal: React.FC<PS3GraphicsModalProps> = ({
       cinematicVignette: false,
       dualshockPrompts: false,
       highDefShadows: false,
+      floorReflections: false,
+      impactJuice: false,
     });
   };
 
@@ -214,6 +220,52 @@ export const PS3GraphicsModal: React.FC<PS3GraphicsModalProps> = ({
                     <div>DEKAT</div>
                     <div className="text-[9px] opacity-75 font-normal">Lebih Besar</div>
                   </button>
+                </div>
+              </div>
+
+              {/* Pilihan Suasana & Pencahayaan Langit (Atmosphere Preset) */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-purple-950/30 to-slate-900/60 border border-amber-400/50 shadow-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">🌅</span>
+                    <div>
+                      <div className="font-bold text-amber-300 font-game text-xs md:text-sm flex items-center gap-1.5">
+                        <span>Pencahayaan & Atmosfer Dunia</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">PREMIUM</span>
+                      </div>
+                      <div className="text-[11px] text-slate-300">
+                        Ubah waktu, bayangan, dan nuansa pencahayaan secara seketika
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-1.5 pt-1">
+                  {[
+                    { id: 'day', label: '☀️ Cerah', sub: 'Pagi Siang' },
+                    { id: 'golden', label: '🌅 Senja', sub: 'Keemasan' },
+                    { id: 'night', label: '🌌 Malam', sub: 'Bintang' },
+                    { id: 'wonder', label: '🌈 Ajaib', sub: 'Wonder' },
+                  ].map(atm => {
+                    const isSelected = (settings.atmospherePreset || 'day') === atm.id;
+                    return (
+                      <button
+                        key={atm.id}
+                        onClick={() => {
+                          audio.playButtonClick();
+                          onUpdateSettings({ ...settings, atmospherePreset: atm.id as any });
+                        }}
+                        className={`py-2 px-1 rounded-xl text-center font-game font-bold text-xs border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-400/30 border-amber-300 text-amber-200 shadow-md ring-2 ring-amber-400/40 scale-102'
+                            : 'bg-slate-900/80 border-slate-700 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <div className="text-[11px] truncate">{atm.label}</div>
+                        <div className="text-[8px] opacity-75 font-normal">{atm.sub}</div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -382,6 +434,62 @@ export const PS3GraphicsModal: React.FC<PS3GraphicsModalProps> = ({
                   <motion.div
                     className="w-4 h-4 rounded-full bg-slate-950 shadow-md"
                     animate={{ x: settings.dualshockPrompts ? 24 : 0 }}
+                  />
+                </div>
+              </div>
+
+              {/* Toggle 6: Refleksi Lantai Mengkilap (Specular Floor Reflections) */}
+              <div
+                onClick={() => toggleSetting('floorReflections')}
+                className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/60 hover:bg-slate-800/80 border border-white/10 cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">✨</span>
+                  <div>
+                    <div className="font-bold text-white font-game text-xs md:text-sm">
+                      Refleksi Lantai Mengkilap (Specular Reflections)
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      Pantulan cahaya halus pada lantai kayu dan marmer ala konsol premium
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center p-1 ${
+                    settings.floorReflections ? 'bg-amber-400' : 'bg-slate-700'
+                  }`}
+                >
+                  <motion.div
+                    className="w-4 h-4 rounded-full bg-slate-950 shadow-md"
+                    animate={{ x: settings.floorReflections ? 24 : 0 }}
+                  />
+                </div>
+              </div>
+
+              {/* Toggle 7: Efek Benturan & Getaran Mikro (Tactile Impact Juice) */}
+              <div
+                onClick={() => toggleSetting('impactJuice')}
+                className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/60 hover:bg-slate-800/80 border border-white/10 cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">💥</span>
+                  <div>
+                    <div className="font-bold text-white font-game text-xs md:text-sm">
+                      Sensasi Benturan & Getaran Mikro (Impact Juice)
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      Efek squash & stretch karakter, partikel debu pijakan, dan getaran layar mikro
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center p-1 ${
+                    settings.impactJuice ? 'bg-amber-400' : 'bg-slate-700'
+                  }`}
+                >
+                  <motion.div
+                    className="w-4 h-4 rounded-full bg-slate-950 shadow-md"
+                    animate={{ x: settings.impactJuice ? 24 : 0 }}
                   />
                 </div>
               </div>

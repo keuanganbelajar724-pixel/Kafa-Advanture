@@ -60,16 +60,39 @@ export const RoboHero: React.FC<RoboHeroProps> = ({
         </div>
       )}
 
-      {/* Ultra-Smooth GPU-Composited Robot Body Animation */}
+      {/* TURBO SPRINT SPEEDLINE PARTICLES */}
+      {state === 'running' && (
+        <div className="absolute -left-8 top-8 flex flex-col gap-2 pointer-events-none z-10 select-none">
+          <motion.div
+            animate={{ opacity: [0.8, 0, 0.8], x: [0, -16, 0] }}
+            transition={{ repeat: Infinity, duration: 0.2 }}
+            className="w-8 h-1 rounded-full bg-gradient-to-r from-cyan-400 to-transparent shadow-[0_0_8px_rgba(56,189,248,0.8)]"
+          />
+          <motion.div
+            animate={{ opacity: [0.9, 0.1, 0.9], x: [-4, -20, -4] }}
+            transition={{ repeat: Infinity, duration: 0.25 }}
+            className="w-10 h-1.5 rounded-full bg-gradient-to-r from-amber-400 to-transparent shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+          />
+          <motion.div
+            animate={{ opacity: [0.7, 0, 0.7], x: [2, -14, 2] }}
+            transition={{ repeat: Infinity, duration: 0.18 }}
+            className="w-6 h-1 rounded-full bg-gradient-to-r from-sky-300 to-transparent shadow-[0_0_8px_rgba(56,189,248,0.8)]"
+          />
+        </div>
+      )}
+
+      {/* Ultra-Smooth GPU-Composited Robot Body Animation with Console Squash & Stretch */}
       <div
         className={`will-change-transform ${
           isWalking ? 'animate-robo-walk' : isIdle ? 'animate-robo-idle' : ''
         }`}
         style={
           isJumping
-            ? { transform: 'scale(0.96, 1.05)' }
+            ? { transform: 'scale(0.92, 1.14) translateY(-3px)' }
+            : state === 'running'
+            ? { transform: 'scale(1.05, 0.96) skewX(-4deg)' }
             : isCelebrating
-            ? { transform: 'translateY(-6px) scale(1.06)' }
+            ? { transform: 'translateY(-6px) scale(1.08)' }
             : undefined
         }
       >

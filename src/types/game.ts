@@ -319,7 +319,7 @@ export interface RoomConfig {
   nameId: string;
   subtitle: string;
   subtitleId: string;
-  theme: 'bedroom' | 'classroom' | 'cabin' | 'attic' | 'cafe' | 'lab' | 'treehouse';
+  theme: 'bedroom' | 'classroom' | 'cabin' | 'attic' | 'cafe' | 'lab' | 'treehouse' | 'cockpit';
   width: number;
   minY: number;
   maxY: number;
@@ -433,6 +433,9 @@ export interface PS3GraphicSettings {
   dualshockPrompts: boolean;
   highDefShadows: boolean;
   cameraZoom?: 'wide' | 'standard' | 'close';
+  atmospherePreset?: 'day' | 'golden' | 'night' | 'wonder';
+  floorReflections?: boolean;
+  impactJuice?: boolean;
 }
 
 export interface PS3TrophyNotification {

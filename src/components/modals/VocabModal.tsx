@@ -126,17 +126,26 @@ export const VocabModal: React.FC<VocabModalProps> = ({
           Pengucapan: <span className="font-mono text-amber-200">{item.phonetic}</span>
         </div>
 
-        {/* Indonesian Audio Explanation Pill */}
-        <div className="mt-2.5 flex items-center gap-2">
+        {/* Indonesian Audio Explanation & Spelling Buttons */}
+        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
           <button
             onClick={handleSpeakEn}
-            className="px-3 py-1 bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400 text-amber-300 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer active:scale-95"
+            className="px-2.5 py-1 bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400 text-amber-300 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer active:scale-95"
+            title="Dengarkan pengucapan kata bahasa Inggris"
           >
             <span>🇬🇧 Suara Inggris</span>
           </button>
           <button
+            onClick={() => audio.speak(item.word.toUpperCase().split('').join(' - '))}
+            className="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400 text-cyan-300 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer active:scale-95"
+            title="Eja huruf demi huruf"
+          >
+            <span>🔤 Eja Kata</span>
+          </button>
+          <button
             onClick={handleSpeakId}
-            className="px-3 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400 text-indigo-300 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer active:scale-95"
+            className="px-2.5 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400 text-indigo-300 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer active:scale-95"
+            title="Penjelasan arti dalam bahasa Indonesia"
           >
             <span>🇮🇩 Penjelasan</span>
           </button>
@@ -145,6 +154,35 @@ export const VocabModal: React.FC<VocabModalProps> = ({
         {/* Sentence Hint */}
         <div className="mt-2 text-[11px] text-slate-300 italic">
           "{item.exampleSentence}"
+        </div>
+
+        {/* 💡 DID YOU KNOW / TAHUKAH KAMU SCIENCE & KNOWLEDGE CARD */}
+        <div className="mt-3 w-full p-3 bg-gradient-to-r from-amber-950/60 via-slate-900/80 to-amber-950/60 rounded-2xl border border-amber-400/40 text-left flex items-start gap-2.5 shadow-md">
+          <span className="text-xl p-1 bg-amber-400/20 rounded-lg shrink-0">💡</span>
+          <div>
+            <div className="text-[10px] font-black font-game text-amber-300 uppercase tracking-wider mb-0.5">
+              TAHUKAH KAMU? (FAKTA MENARIK)
+            </div>
+            <p className="text-[11px] text-amber-100 leading-relaxed">
+              {item.id === 'vocab_desk' || item.word.toLowerCase() === 'desk'
+                ? 'Menjaga meja belajar tetap rapi dan terang terbukti meningkatkan daya ingat dan konsentrasi belajar hingga 40%!'
+                : item.id === 'vocab_pencil' || item.word.toLowerCase() === 'pencil'
+                ? 'Satu batang pensil standar rata-rata dapat menarik garis sepanjang 56 kilometer atau menulis sekitar 45.000 kata!'
+                : item.id === 'vocab_ruler' || item.word.toLowerCase() === 'ruler'
+                ? 'Penggaris pertama kali ditemukan oleh peradaban Lembah Indus lebih dari 4.000 tahun yang lalu dari bahan gading gajah!'
+                : item.id === 'vocab_book' || item.word.toLowerCase() === 'book'
+                ? 'Membaca buku selama 15 menit setiap hari melatih jutaan sel saraf baru di otakmu dan memperluas imajinasi!'
+                : item.id === 'vocab_clock' || item.word.toLowerCase() === 'clock'
+                ? 'Jam matahari adalah alat penunjuk waktu tertua di bumi yang memanfaatkan bayangan matahari ribuan tahun lalu.'
+                : item.id === 'vocab_tree' || item.word.toLowerCase() === 'tree'
+                ? 'Satu pohon dewasa mampu menyerap 22 kg karbon dioksida per tahun dan mengeluarkan oksigen bersih untuk 4 manusia!'
+                : item.id === 'vocab_flower' || item.word.toLowerCase() === 'flower'
+                ? 'Bunga matahari selalu memutar kelopaknya mengikuti arah pergerakan matahari, fenomena ini disebut heliotropisme!'
+                : item.id === 'vocab_water' || item.word.toLowerCase() === 'water'
+                ? 'Sekitar 60% tubuh manusia dan 71% permukaan bumi terdiri dari air. Minum cukup air membuat otak kita berpikir lebih tajam!'
+                : 'Mempelajari kosakata baru dan membaca setiap hari adalah kunci emas untuk menjadi anak cerdas berprestasi!'}
+            </p>
+          </div>
         </div>
 
         {/* ======================================================== */}

@@ -25,6 +25,7 @@ import { PS3GraphicSettings, PS3TrophyNotification, HeroPowerType } from '../../
 import { HERO_POWERS, ALL_HERO_POWER_IDS } from '../../data/heroPowers';
 import { ADVENTURE_KNOWLEDGE_POSTS, AdventureKnowledgePost } from '../../data/sdCurriculum';
 import { KnowledgePostModal } from '../modals/KnowledgePostModal';
+import { ClassroomBlackboardModal } from '../modals/ClassroomBlackboardModal';
 
 const WORLD_HEIGHT = 630;
 
@@ -125,6 +126,10 @@ export const GameWorld: React.FC<GameWorldProps> = ({
   const nearKnowledgePostRef = useRef<AdventureKnowledgePost | null>(null);
   const [nearKnowledgePost, setNearKnowledgePost] = useState<AdventureKnowledgePost | null>(null);
   const [activeKnowledgePost, setActiveKnowledgePost] = useState<AdventureKnowledgePost | null>(null);
+  const [showClassroomBlackboardModal, setShowClassroomBlackboardModal] = useState<boolean>(false);
+  const [blackboardInitialTab, setBlackboardInitialTab] = useState<'QUIZ' | 'ASTRONOMI' | 'LITERASI' | 'TRIVIA' | 'DOODLE'>('QUIZ');
+  const nearBlackboardRef = useRef<boolean>(false);
+  const [nearBlackboard, setNearBlackboard] = useState<boolean>(false);
 
   const cameraXRef = useRef<number>(0);
   const [cameraX, setCameraX] = useState<number>(0);
@@ -710,6 +715,9 @@ export const GameWorld: React.FC<GameWorldProps> = ({
   const triggerInteraction = useCallback(() => {
     if (isNearShrineRef.current) {
       triggerShrineBlessing();
+    } else if (nearBlackboardRef.current) {
+      audio.playButtonClick();
+      setShowClassroomBlackboardModal(true);
     } else if (nearDoorPortalRef.current && onEnterRoom) {
       audio.playDoorOpen();
       onEnterRoom(nearDoorPortalRef.current.roomId);
@@ -1344,7 +1352,7 @@ export const GameWorld: React.FC<GameWorldProps> = ({
         const dx = newX - portal.x;
         const dy = newY - portal.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 140 && dist < minPortalDist) {
+        if (dist < 85 && dist < minPortalDist) {
           minPortalDist = dist;
           closestDoorPortal = portal;
         }
@@ -1541,6 +1549,12 @@ export const GameWorld: React.FC<GameWorldProps> = ({
         setIsNearShrine(isNearShrineNow);
       }
 
+      const isNearBlackboardNow = level.areaId === 'area_school' && Math.abs(newX - 520) < 95 && Math.abs(newY - level.groundY) < 80;
+      if (isNearBlackboardNow !== nearBlackboardRef.current) {
+        nearBlackboardRef.current = isNearBlackboardNow;
+        setNearBlackboard(isNearBlackboardNow);
+      }
+
       requestRef.current = requestAnimationFrame(update);
     };
 
@@ -1629,20 +1643,243 @@ export const GameWorld: React.FC<GameWorldProps> = ({
           {/* Gentle background color backing */}
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-950/70 to-slate-950 pointer-events-none" />
 
-          {/* Background Art with High Crisp Legibility and Vibrant Colors */}
-          <div
-            className="absolute inset-0 will-change-transform transition-opacity duration-300"
-            style={{
-              backgroundImage: `url(${level.bgImage})`,
-              backgroundRepeat: 'repeat-x',
-              backgroundSize: `auto ${WORLD_HEIGHT}px`,
-              backgroundPosition: 'left top',
-              opacity: graphicSettings?.cleanBackgroundMode ? 0.55 : 0.76,
-              filter: graphicSettings?.cleanBackgroundMode
-                ? 'brightness(1.02) contrast(1.02)'
-                : 'brightness(1.06) contrast(1.05) saturate(1.12)',
-            }}
-          />
+          {/* Background Art with High Crisp Legibility and Continuous Architectural Corridor */}
+          {level.areaId === 'area_school' ? (
+            <div className="absolute inset-0 will-change-transform">
+              {/* Primary Teacher Blackboard Classroom Area (Zone 1: x: 0 to 1800px) */}
+              <div
+                className="absolute top-0 left-0 h-full will-change-transform z-10"
+                style={{
+                  width: '1850px',
+                  backgroundImage: `url(${level.bgImage})`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'left top',
+                  maskImage: 'linear-gradient(to right, rgba(0,0,0,1) 85%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,1) 85%, transparent 100%)',
+                  opacity: graphicSettings?.cleanBackgroundMode ? 0.7 : 0.88,
+                }}
+              />
+
+              {/* Clickable Classroom Blackboard Area (Opens Quiz, Solar System & Literature) */}
+              <div
+                className="absolute cursor-pointer pointer-events-auto z-20 group"
+                style={{
+                  left: '300px',
+                  top: '160px',
+                  width: '560px',
+                  height: '320px',
+                }}
+                onClick={() => {
+                  audio.playButtonClick();
+                  setBlackboardInitialTab('QUIZ');
+                  setShowClassroomBlackboardModal(true);
+                }}
+                title="Papan Tulis Kelas Sahabat Kafa: Klik untuk Kuis, Tata Surya & Literasi"
+              />
+
+              {/* Base Classroom Wall & Wainscoting for the Extended Corridor (Zone 2 onwards: from x: 1700px) */}
+              <div className="absolute left-[1700px] right-0 top-0 bottom-0 bg-[#0f1d19]">
+                {/* Upper wall: Calming Sage Green Classroom Wall */}
+                <div className="absolute inset-x-0 top-0 h-[490px] bg-gradient-to-b from-[#18362b] via-[#1d4335] to-[#163529]" />
+
+                {/* Upper Crown Moulding & Picture Rail */}
+                <div className="absolute inset-x-0 top-[60px] h-3 bg-gradient-to-r from-amber-900 via-amber-700 to-amber-900 border-y border-amber-500/50 shadow-sm" />
+
+                {/* Lower Wainscoting: Warm Oak & Cherry Wood Panels aligned with ground */}
+                <div className="absolute inset-x-0 top-[490px] bottom-0 bg-gradient-to-b from-[#451a03] via-[#78350f] to-[#291003] border-t-4 border-amber-500/80 shadow-2xl">
+                  {/* Wainscoting vertical fluted wood battens every 60px */}
+                  <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(90deg,#000,#000_3px,transparent_3px,transparent_60px)]" />
+                  {/* Chair rail shadow */}
+                  <div className="absolute inset-x-0 top-0 h-3 bg-black/40" />
+                </div>
+              </div>
+
+                {/* CONTINUOUS THEMATIC CLASSROOM CORRIDOR WINGS (NO SEAMS, HIGH VARIETY) */}
+                {/* Zone 2 (x: 1800 - 3200): Big Panoramic Garden Windows with Outdoor Trees & God Rays */}
+                <div className="absolute left-[1900px] top-[90px] flex items-center gap-8 pointer-events-none">
+                  {[0, 1, 2].map(wIdx => (
+                    <div key={wIdx} className="w-[340px] h-[230px] rounded-2xl bg-sky-200 border-4 border-white shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden relative">
+                      <div className="absolute inset-0 bg-gradient-to-b from-sky-400 via-sky-300 to-emerald-200" />
+                      <div className="absolute top-3 right-6 w-14 h-14 rounded-full bg-yellow-300/90 shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
+                      <div className="absolute bottom-0 inset-x-0 h-28 bg-emerald-600 rounded-t-[50px] transform -rotate-2 scale-110" />
+                      <div className="absolute bottom-0 inset-x-0 h-20 bg-emerald-500 rounded-t-[70px] transform rotate-3" />
+                      <div className="absolute bottom-2 left-6 text-3xl">🌳</div>
+                      <div className="absolute bottom-4 right-10 text-4xl">🌲</div>
+                      <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 border-2 border-white/80 pointer-events-none">
+                        <div className="border border-white/70" />
+                        <div className="border border-white/70" />
+                        <div className="border border-white/70" />
+                        <div className="border border-white/70" />
+                        <div className="border border-white/70" />
+                        <div className="border border-white/70" />
+                      </div>
+                      <div className="absolute -inset-x-8 top-0 h-10 bg-white/30 transform -rotate-30 pointer-events-none" />
+
+                      {/* Volumetric Sunbeam / God Ray Streaming Across Floor */}
+                      <div 
+                        className="absolute -top-10 -left-12 w-[380px] h-[520px] pointer-events-none opacity-30 mix-blend-screen"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(254, 240, 138, 0.5) 0%, rgba(253, 224, 71, 0.18) 35%, transparent 75%)',
+                          transform: 'skewX(-28deg)',
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Zone 3 (x: 3400 - 4600): Galeri Prestasi Siswa & Karya Seni */}
+                <div className="absolute left-[3450px] top-[90px] flex items-center gap-8 pointer-events-none">
+                  <div className="px-5 py-2.5 rounded-2xl bg-slate-900/90 border-2 border-amber-400 shadow-xl flex flex-col items-center">
+                    <div className="text-amber-300 font-game font-black text-xs">🎨 GALERI PRESTASI SAHABAT KAFA</div>
+                    <div className="text-[10px] text-slate-300">Karya Seni & Robotika Siswa Berbakat</div>
+                  </div>
+                  {[
+                    { icon: '🚀', title: 'Roket Masa Depan', by: 'Kafa', color: 'from-blue-900 to-indigo-900 border-cyan-400' },
+                    { icon: '🤖', title: 'Robot Sahabat', by: 'Aisyah', color: 'from-amber-900 to-orange-900 border-amber-400' },
+                    { icon: '🌺', title: 'Taman Pelangi', by: 'Rafi', color: 'from-pink-900 to-rose-900 border-pink-400' },
+                  ].map((art, aIdx) => (
+                    <div key={aIdx} className={`w-48 h-56 rounded-2xl bg-gradient-to-b ${art.color} border-3 shadow-2xl p-3 flex flex-col items-center justify-between`}>
+                      <span className="text-5xl my-auto animate-pulse">{art.icon}</span>
+                      <div className="w-full text-center bg-black/50 py-1 rounded-xl">
+                        <div className="text-[10px] font-bold text-white font-game">{art.title}</div>
+                        <div className="text-[8px] text-amber-300">Karya: {art.by} ⭐</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Zone 4 (x: 4900 - 6400): Dinding Sains, Tata Surya & Astronomi */}
+                <div className="absolute left-[5000px] top-[85px] flex items-center gap-10 pointer-events-auto">
+                  <div 
+                    onClick={() => {
+                      audio.playButtonClick();
+                      setBlackboardInitialTab('ASTRONOMI');
+                      setShowClassroomBlackboardModal(true);
+                    }}
+                    className="w-[580px] h-[260px] rounded-3xl bg-slate-950/95 border-4 border-cyan-400 shadow-[0_0_35px_rgba(6,182,212,0.5)] p-5 flex flex-col justify-between overflow-hidden relative cursor-pointer hover:border-cyan-300 transition-all hover:scale-[1.01]"
+                  >
+                    <div className="flex items-center justify-between z-10 border-b border-cyan-500/40 pb-2">
+                      <div className="font-game font-black text-cyan-300 text-sm flex items-center gap-2">
+                        <span>🌌 PETA SISTEM TATA SURYA</span>
+                        <span className="text-[9px] bg-cyan-400 text-slate-950 font-black px-2 py-0.5 rounded-full animate-pulse">
+                          KLIK / KETUK
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-cyan-200 font-mono">Astronomi Dasar Kelas SD</div>
+                    </div>
+                    <div className="flex items-center justify-around py-3 z-10 text-2xl">
+                      <span title="Matahari">☀️</span>
+                      <span title="Merkurius" className="text-sm">🪐</span>
+                      <span title="Venus" className="text-base">🌕</span>
+                      <span title="Bumi" className="text-3xl animate-spin" style={{ animationDuration: '10s' }}>🌍</span>
+                      <span title="Mars" className="text-lg">🔴</span>
+                      <span title="Jupiter" className="text-4xl">🪐</span>
+                      <span title="Saturnus" className="text-3xl">🪐</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 z-10">
+                      <div className="text-[10px] text-slate-300 bg-cyan-950/70 p-2 rounded-xl font-mono flex-1">
+                        "Earth is the 3rd planet from the Sun! Kita wajib menjaga bumi tetap hijau dan bersih."
+                      </div>
+                      <button 
+                        className="py-2 px-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-xs font-game flex items-center gap-1.5 shadow-lg active:scale-95 transition-all shrink-0"
+                      >
+                        <span>🚀</span>
+                        <span>JELAJAHI TATA SURYA</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Zone 5 (x: 6700 - 8200): Perpustakaan Mini Sekolah */}
+                <div className="absolute left-[6800px] top-[85px] flex items-center gap-8 pointer-events-auto">
+                  <div 
+                    onClick={() => {
+                      audio.playButtonClick();
+                      setBlackboardInitialTab('LITERASI');
+                      setShowClassroomBlackboardModal(true);
+                    }}
+                    className="w-[620px] h-[260px] rounded-3xl bg-amber-950/95 border-4 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.5)] p-5 flex flex-col justify-between relative overflow-hidden cursor-pointer hover:border-amber-300 transition-all hover:scale-[1.01]"
+                  >
+                    <div className="flex items-center justify-between border-b border-amber-600/40 pb-2">
+                      <div className="font-game font-black text-amber-300 text-sm flex items-center gap-2">
+                        <span>📚 POJOK LITERASI SAHABAT KAFA</span>
+                        <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full animate-pulse">
+                          KLIK / KETUK
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-amber-200">"Membaca adalah Jendela Dunia"</div>
+                    </div>
+                    <div className="grid grid-cols-8 gap-2 py-2">
+                      {['📖', '📕', '📗', '📘', '📙', '📓', '📒', '📚', '📕', '📗', '📘', '📙', '📖', '📓', '📒', '📚'].map((bk, bki) => (
+                        <div key={bki} className="h-16 bg-gradient-to-t from-stone-900 to-amber-900 rounded-lg border border-amber-400/50 flex items-center justify-center text-xl shadow">
+                          {bk}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[11px] text-amber-100 italic bg-black/40 p-2 rounded-xl flex-1">
+                        "Buku adalah sahabat setia yang memberi kita sayap untuk menjelajahi semesta ilmu pengetahuan!"
+                      </div>
+                      <button 
+                        className="py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs font-game flex items-center gap-1.5 shadow-lg active:scale-95 transition-all shrink-0"
+                      >
+                        <span>📖</span>
+                        <span>BUKA POJOK BACA</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Zone 6 (x: 8500 - 10500): Hall of Fame & Lemari Piala Juara */}
+                <div className="absolute left-[8600px] top-[85px] flex items-center gap-8 pointer-events-auto">
+                  <div 
+                    onClick={() => {
+                      audio.playPowerUp();
+                      setBlackboardInitialTab('TRIVIA');
+                      setShowClassroomBlackboardModal(true);
+                    }}
+                    className="w-[580px] h-[250px] rounded-3xl bg-gradient-to-br from-slate-950 via-amber-950/60 to-slate-950 border-4 border-yellow-400 shadow-[0_0_35px_rgba(250,204,21,0.5)] p-5 flex flex-col justify-between cursor-pointer hover:border-yellow-300 transition-all hover:scale-[1.01]"
+                  >
+                    <div className="flex items-center justify-between border-b border-yellow-500/40 pb-2">
+                      <div className="font-game font-black text-yellow-300 text-sm">🏆 RUANG PENGHARGAAN JUARA KELAS</div>
+                      <div className="text-[10px] text-yellow-200">Sahabat Kafa Berprestasi</div>
+                    </div>
+                    <div className="flex items-center justify-around py-3">
+                      <div className="text-center">
+                        <span className="text-4xl block animate-bounce">🥇</span>
+                        <span className="text-[9px] font-bold text-amber-300 font-game">JUARA 1 MATEMATIKA</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-5xl block animate-bounce" style={{ animationDelay: '0.2s' }}>🏆</span>
+                        <span className="text-[10px] font-black text-yellow-300 font-game">PIALA BERGILIR BAHASA INGGRIS</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-4xl block animate-bounce" style={{ animationDelay: '0.4s' }}>🥇</span>
+                        <span className="text-[9px] font-bold text-amber-300 font-game">JUARA 1 ROBOTIKA</span>
+                      </div>
+                    </div>
+                    <div className="text-center text-xs font-black font-game text-yellow-300 bg-yellow-500/20 py-1.5 rounded-xl border border-yellow-400/40">
+                      👑 SELAMAT KAMU TELAH MENJADI SISWA TELADAN! 🌟
+                    </div>
+                  </div>
+                </div>
+              </div>
+          ) : (
+            <div
+              className="absolute inset-0 will-change-transform transition-opacity duration-300"
+              style={{
+                backgroundImage: `url(${level.bgImage})`,
+                backgroundRepeat: 'repeat-x',
+                backgroundSize: `auto ${WORLD_HEIGHT}px`,
+                backgroundPosition: 'left top',
+                opacity: graphicSettings?.cleanBackgroundMode ? 0.55 : 0.76,
+                filter: graphicSettings?.cleanBackgroundMode
+                  ? 'brightness(1.02) contrast(1.02)'
+                  : 'brightness(1.06) contrast(1.05) saturate(1.12)',
+              }}
+            />
+          )}
 
           {/* Clean Focus Scrim (Keeps background calm and lets interactive items pop out) */}
           <div
@@ -2227,134 +2464,66 @@ export const GameWorld: React.FC<GameWorldProps> = ({
               }}
               className="absolute cursor-pointer flex flex-col items-center group pointer-events-auto transition-transform"
               style={{
-                left: `${portal.x - 76}px`,
-                top: `${portal.y - 150}px`,
+                left: `${portal.x - 52}px`,
+                top: `${portal.y - 128}px`,
                 zIndex: Math.floor(portal.y) - 2,
               }}
             >
-              {/* 3D Deep Ground Shadow */}
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-44 h-9 bg-black/60 rounded-full blur-[5px] pointer-events-none" />
+              {/* Ground Shadow */}
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-black/50 rounded-full blur-[4px] pointer-events-none" />
 
-              {/* 3D Volumetric Golden Light Spill pouring out onto the floor */}
+              {/* Warm Golden Light Spill on Floor */}
               <div
-                className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-40 h-16 pointer-events-none transition-opacity duration-300"
+                className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-28 h-10 pointer-events-none transition-opacity duration-300"
                 style={{
-                  background: 'radial-gradient(ellipse at top, rgba(251,191,36,0.55) 0%, rgba(245,158,11,0.2) 50%, transparent 80%)',
-                  clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)',
+                  background: 'radial-gradient(ellipse at top, rgba(251,191,36,0.45) 0%, rgba(245,158,11,0.15) 60%, transparent 85%)',
                   filter: 'blur(2px)',
-                  opacity: isNear ? 1 : 0.7,
+                  opacity: isNear ? 1 : 0.6,
                 }}
               />
 
-              {/* 3D ARCHITECTURAL FAÇADE CONTAINER */}
-              <div className="relative w-38 h-46 flex flex-col items-center justify-end group-hover:scale-[1.02] transition-transform">
-                
-                {/* --- 1. 3D ISOMETRIC ROOF & EAVES --- */}
-                <div className="relative w-42 z-20 flex flex-col items-center -mb-2">
-                  {/* Roof Top Ridge Crest */}
-                  <div className="h-2.5 w-24 bg-gradient-to-r from-amber-700 via-yellow-400 to-amber-700 rounded-t-full shadow-md flex items-center justify-center">
-                    <span className="text-[7px] text-amber-950 font-black tracking-widest uppercase">✦ 3D ✦</span>
-                  </div>
-                  
-                  {/* Pitched Gable Roof with 3D Beveled Shingles */}
-                  <div className="relative w-full h-10 bg-gradient-to-b from-red-800 via-rose-900 to-stone-900 rounded-t-2xl border-t-3 border-x-3 border-amber-500 shadow-2xl flex flex-col items-center justify-center overflow-hidden">
-                    {/* Shingle Tiles Pattern */}
-                    <div className="absolute inset-0 opacity-25 bg-[repeating-linear-gradient(90deg,#000,#000_2px,transparent_2px,transparent_20px)]" />
-                    <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-400/80 shadow" />
-                    
-                    {/* Architectural Signboard Plate */}
-                    <div className="relative z-10 px-2 py-0.5 bg-gradient-to-r from-slate-950 via-amber-950 to-slate-950 rounded-lg border border-amber-400 shadow-lg flex items-center gap-1">
-                      <span className="text-xs">{portal.icon || '🚪'}</span>
-                      <span className="font-game text-[8px] font-black tracking-wider text-amber-300 uppercase truncate max-w-[105px]">
-                        {portal.name}
-                      </span>
-                    </div>
-                  </div>
+              {/* Compact Sleek Arched Doorway Frame */}
+              <div className="relative w-26 h-32 bg-gradient-to-b from-stone-800 via-amber-950/80 to-stone-900 rounded-t-full border-3 border-amber-600 shadow-[0_10px_25px_rgba(0,0,0,0.6)] flex flex-col items-center justify-between p-1 group-hover:scale-105 transition-transform overflow-hidden">
+                {/* Decorative Arch Keystone / Sign Header */}
+                <div className="relative z-10 px-2 py-0.5 rounded-full bg-slate-950/90 border border-amber-400 shadow flex items-center gap-1 mt-1">
+                  <span className="text-[10px]">{portal.icon || '🚪'}</span>
+                  <span className="font-game text-[8px] font-black text-amber-300 truncate max-w-[75px]">
+                    {portal.name}
+                  </span>
+                </div>
 
-                  {/* Carved Wood Under-Eaves Bracket */}
-                  <div className="w-38 h-2 bg-gradient-to-b from-amber-900 to-stone-900 border-b border-amber-950 shadow flex justify-between px-3">
-                    <div className="w-2 h-full bg-amber-700 rounded-b" />
-                    <div className="w-2 h-full bg-amber-700 rounded-b" />
+                {/* Warm 3D Room Interior Preview Glow */}
+                <div className="relative w-18 h-22 bg-gradient-to-b from-black via-amber-950 to-stone-950 rounded-t-full border border-amber-500/70 shadow-inner flex flex-col items-center justify-center overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-amber-400/30 via-yellow-200/15 to-transparent animate-pulse" />
+                  
+                  {/* Subtle Ajar Door */}
+                  <div className="relative z-10 w-11 h-16 bg-gradient-to-r from-amber-800 to-amber-900 rounded-t-lg border border-amber-400 shadow-md flex items-center justify-center">
+                    <span className="text-xs filter drop-shadow">🚪</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-300 border border-amber-950 shadow absolute right-1 bottom-4" />
                   </div>
                 </div>
 
-                {/* --- 2. 3D BUILDING WALLS, PILLARS & RECESSED PORTAL --- */}
-                <div className="relative w-34 h-36 bg-gradient-to-b from-stone-800 via-amber-950/70 to-stone-900 rounded-b-xl border-x-4 border-b-4 border-amber-800/90 shadow-2xl flex items-end justify-center p-1.5 overflow-hidden">
-                  
-                  {/* Subtle Wall Brick Texture */}
-                  <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(0deg,#000,#000_1px,transparent_1px,transparent_18px),repeating-linear-gradient(90deg,#000,#000_1px,transparent_1px,transparent_28px)]" />
-
-                  {/* Left 3D Pillar */}
-                  <div className="absolute left-1.5 top-0 bottom-4 w-4 bg-gradient-to-r from-amber-700 via-amber-500 to-amber-900 rounded-t shadow-lg flex flex-col justify-between items-center py-1 border-r border-stone-950/40">
-                    <div className="w-5 h-1.5 bg-amber-400 rounded-sm shadow-sm -mt-0.5" />
-                    {/* Hanging Brass Lantern Left */}
-                    <div className="w-3.5 h-5 bg-gradient-to-b from-amber-900 to-stone-900 border border-amber-400 rounded-sm shadow-[0_0_10px_rgba(245,158,11,0.8)] flex items-center justify-center text-[8px] animate-pulse">
-                      🔥
-                    </div>
-                    <div className="w-5 h-2 bg-amber-800 rounded-sm shadow" />
-                  </div>
-
-                  {/* Right 3D Pillar */}
-                  <div className="absolute right-1.5 top-0 bottom-4 w-4 bg-gradient-to-r from-amber-700 via-amber-500 to-amber-900 rounded-t shadow-lg flex flex-col justify-between items-center py-1 border-l border-stone-950/40">
-                    <div className="w-5 h-1.5 bg-amber-400 rounded-sm shadow-sm -mt-0.5" />
-                    {/* Hanging Brass Lantern Right */}
-                    <div className="w-3.5 h-5 bg-gradient-to-b from-amber-900 to-stone-900 border border-amber-400 rounded-sm shadow-[0_0_10px_rgba(245,158,11,0.8)] flex items-center justify-center text-[8px] animate-pulse">
-                      🔥
-                    </div>
-                    <div className="w-5 h-2 bg-amber-800 rounded-sm shadow" />
-                  </div>
-
-                  {/* --- 3. DEEP 3D RECESSED DOORWAY CHAMBER --- */}
-                  <div className="relative w-22 h-28 bg-gradient-to-b from-black via-amber-950 to-stone-950 rounded-t-full border-2 border-amber-600 shadow-[inset_0_4px_18px_rgba(0,0,0,0.9)] flex flex-col items-center justify-between p-1 overflow-hidden">
-                    
-                    {/* Warm 3D Interior Light Glow */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-amber-400/40 via-yellow-200/25 to-transparent animate-pulse" />
-                    
-                    {/* Arched Inner Keystone */}
-                    <div className="relative z-10 w-5 h-2 bg-amber-400 rounded-b shadow text-[6px] text-slate-950 font-black text-center">
-                      3D
-                    </div>
-
-                    {/* Ajar Wooden Oak Door with 3D Depth */}
-                    <div className="relative z-10 flex flex-col items-center my-auto transform group-hover:scale-105 transition-transform">
-                      <div className="relative w-14 h-18 bg-gradient-to-r from-amber-800 via-amber-700 to-amber-900 rounded-t-xl border-2 border-amber-500 shadow-xl flex flex-col items-center justify-center p-0.5">
-                        {/* Door Panels Wood Inset */}
-                        <div className="w-10 h-7 bg-amber-950/60 rounded border border-amber-600/80 mb-0.5 flex items-center justify-center shadow-inner">
-                          <span className="text-base filter drop-shadow">{portal.icon || '🚪'}</span>
-                        </div>
-                        {/* Brass Doorknob */}
-                        <div className="w-2 h-2 rounded-full bg-yellow-300 border border-amber-800 shadow absolute right-1.5 bottom-4 ring-1 ring-yellow-100" />
-                        <span className="text-[8px] font-black font-game text-amber-200 tracking-wider">
-                          MASUK
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 3D Stone Porch Threshold Steps */}
-                    <div className="w-full flex flex-col items-center z-10">
-                      <div className="w-24 h-2 bg-gradient-to-r from-stone-400 via-amber-200 to-stone-400 rounded-t border-t border-white shadow flex items-center justify-center text-[6px] font-black text-slate-950 font-game">
-                        WELCOME
-                      </div>
-                      <div className="w-26 h-2 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-800 rounded-t border-t border-amber-300 shadow" />
-                    </div>
-                  </div>
+                {/* Stone Threshold Step */}
+                <div className="w-20 h-1.5 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 rounded-t shadow text-[6px] text-slate-950 font-black text-center font-game">
+                  3D ROOM
                 </div>
               </div>
 
-              {/* Elevated Non-Overlapping Near Portal Prompt */}
+              {/* Sleek Contextual Proximity Prompt */}
               <AnimatePresence>
                 {isNear && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.85 }}
-                    animate={{ opacity: 1, y: -14, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.85 }}
-                    className="absolute -top-12 whitespace-nowrap z-[100] pointer-events-auto"
+                    initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.9 }}
+                    className="absolute -top-9 whitespace-nowrap z-[100] pointer-events-auto"
                   >
-                    <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:to-yellow-200 text-slate-950 rounded-2xl font-black text-xs shadow-[0_8px_25px_rgba(245,158,11,0.6)] border-2 border-white font-game active:scale-95 transition-all ring-4 ring-amber-400/40 animate-bounce">
-                      <span className="px-1.5 py-0.5 bg-slate-950 text-amber-300 rounded-lg text-[10px] font-mono font-bold">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-400 text-slate-950 rounded-full font-black text-[11px] shadow-xl border-2 border-white font-game active:scale-95 transition-all ring-2 ring-amber-400/40 animate-bounce">
+                      <span className="px-1.5 py-0.2 bg-slate-950 text-amber-300 rounded text-[9px] font-mono">
                         [E]
                       </span>
-                      <span>MASUK KE RUANGAN 3D 🚪</span>
+                      <span>{portal.label || 'Masuk 3D'}</span>
+                      <span>🚪</span>
                     </div>
                   </motion.div>
                 )}
@@ -2684,6 +2853,38 @@ export const GameWorld: React.FC<GameWorldProps> = ({
             </div>
           );
         })}
+
+        {/* INTERACTIVE CLASSROOM BLACKBOARD PROMPT */}
+        {level.areaId === 'area_school' && nearBlackboard && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.9 }}
+            className="absolute z-[750] pointer-events-auto"
+            style={{
+              left: '480px',
+              top: '430px',
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                audio.playButtonClick();
+                setBlackboardInitialTab('QUIZ');
+                setShowClassroomBlackboardModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 text-white rounded-full font-black text-xs shadow-xl border-2 border-emerald-400 font-game cursor-pointer active:scale-95 transition-all ring-2 ring-emerald-400/40"
+            >
+              <span className="px-1.5 py-0.2 bg-emerald-400 text-slate-950 rounded text-[9px] font-black">
+                [E]
+              </span>
+              <span className="text-emerald-300">Papan Tulis 🎓</span>
+              <span className="text-yellow-300 text-[10px] bg-black/40 px-1.5 py-0.2 rounded-full">
+                Kuis & Ilmu ⭐
+              </span>
+            </button>
+          </motion.div>
+        )}
 
         {/* LAYER 6: LEVEL NPC GUIDE */}
         <div
@@ -3435,6 +3636,20 @@ export const GameWorld: React.FC<GameWorldProps> = ({
           onReward={(xp, coins) => {
             onCollectCoin(coins);
             spawnFloatingScore(player.x, player.y - 70, `+${coins} 🪙 +${xp} XP ⭐`, '#38BDF8');
+          }}
+        />
+      )}
+
+      {/* 2D CLASSROOM BLACKBOARD LEARNING & CHALK DOODLE MODAL */}
+      {showClassroomBlackboardModal && (
+        <ClassroomBlackboardModal
+          isOpen={showClassroomBlackboardModal}
+          initialTab={blackboardInitialTab}
+          onClose={() => setShowClassroomBlackboardModal(false)}
+          onReward={(xp, coins, stars = 1) => {
+            onCollectCoin(coins);
+            onCollectStar(stars);
+            spawnFloatingScore(player.x, player.y - 70, `+${coins} 🪙 +${xp} XP +${stars} ⭐`, '#10B981');
           }}
         />
       )}

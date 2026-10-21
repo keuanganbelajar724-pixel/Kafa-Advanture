@@ -820,7 +820,7 @@ export const GAME_LEVELS: GameLevel[] = [
       questDescription: 'Temukan 3 benda: BAG, BOOK, dan SHOES.',
     },
     doorPortals: [
-      { id: 'dp_1_bedroom', roomId: 'room_1_bedroom', name: 'Kamar Tidur 3D', x: 420, y: 545, label: 'Masuk Kamar 3D', icon: '🛏️' },
+      { id: 'dp_1_bedroom', roomId: 'room_1_bedroom', name: 'Kamar Tidur 3D', x: 950, y: 545, label: 'Masuk Kamar 3D', icon: '🛏️' },
       { id: 'dp_1_attic', roomId: 'room_1_attic', name: 'Loteng Rahasia', x: 2600, y: 545, label: 'Masuk Loteng 3D', icon: '🗝️' },
     ],
     rooms: [
@@ -1224,7 +1224,7 @@ export const GAME_LEVELS: GameLevel[] = [
       questDescription: 'Temukan 3 keajaiban: TREE, FLOWER, WATER.',
     },
     doorPortals: [
-      { id: 'dp_2_cabin', roomId: 'room_2_cabin', name: 'Pondok Hutan 3D', x: 480, y: 545, label: 'Masuk Pondok 3D', icon: '🏡' },
+      { id: 'dp_2_cabin', roomId: 'room_2_cabin', name: 'Pondok Hutan 3D', x: 1050, y: 545, label: 'Masuk Pondok 3D', icon: '🏡' },
       { id: 'dp_2_treehouse', roomId: 'room_2_treehouse', name: 'Rumah Pohon 3D', x: 2400, y: 545, label: 'Masuk Pohon 3D', icon: '🏕️' },
     ],
     rooms: [
@@ -1683,8 +1683,8 @@ export const GAME_LEVELS: GameLevel[] = [
       questDescription: 'Temukan 3 alat sekolah: DESK, PENCIL, RULER.',
     },
     doorPortals: [
-      { id: 'dp_3_classroom', roomId: 'room_3_classroom', name: 'Ruang Kelas 3D', x: 500, y: 545, label: 'Masuk Kelas 3D', icon: '🏫' },
-      { id: 'dp_3_lab', roomId: 'room_3_lab', name: 'Lab Sains 3D', x: 2600, y: 545, label: 'Masuk Lab 3D', icon: '🔬' },
+      { id: 'dp_3_classroom', roomId: 'room_3_classroom', name: 'Ruang Kelas 3D', x: 1350, y: 545, label: 'Masuk Kelas 3D', icon: '🏫' },
+      { id: 'dp_3_lab', roomId: 'room_3_lab', name: 'Lab Sains 3D', x: 5200, y: 545, label: 'Masuk Lab 3D', icon: '🔬' },
     ],
     rooms: [
       {
@@ -1700,7 +1700,7 @@ export const GAME_LEVELS: GameLevel[] = [
         wallColor: '#064e3b',
         floorPattern: 'wood',
         windowView: 'sky',
-        doorEntrance: { x: 500, y: 545 },
+        doorEntrance: { x: 1350, y: 545 },
         playerStartX: 450,
         playerStartY: 440,
         vocabItems: [
@@ -2113,7 +2113,7 @@ export const GAME_LEVELS: GameLevel[] = [
       questDescription: 'Kumpulkan 3 sarapan: BREAD, MILK, APPLE.',
     },
     doorPortals: [
-      { id: 'dp_4_bakery', roomId: 'room_4_bakery', name: 'Toko Roti & Kafe 3D', x: 480, y: 545, label: 'Masuk Kafe 3D', icon: '☕' },
+      { id: 'dp_4_bakery', roomId: 'room_4_bakery', name: 'Toko Roti & Kafe 3D', x: 1050, y: 545, label: 'Masuk Kafe 3D', icon: '☕' },
     ],
     rooms: [
       {
@@ -2510,7 +2510,7 @@ export const GAME_LEVELS: GameLevel[] = [
       questDescription: 'Temukan 3 satwa: LION, MONKEY, DUCK.',
     },
     doorPortals: [
-      { id: 'dp_5_treehouse', roomId: 'room_5_treehouse', name: 'Rumah Pohon Safari 3D', x: 520, y: 545, label: 'Masuk Rumah Pohon 3D', icon: '🏕️' },
+      { id: 'dp_5_treehouse', roomId: 'room_5_treehouse', name: 'Rumah Pohon Safari 3D', x: 1150, y: 545, label: 'Masuk Rumah Pohon 3D', icon: '🏕️' },
     ],
     rooms: [
       {
@@ -2855,7 +2855,7 @@ export const GAME_LEVELS: GameLevel[] = [
       questDescription: 'Temukan 3 benda: TORCH, GEM, CRYSTAL.',
     },
     doorPortals: [
-      { id: 'dp_6_vault', roomId: 'room_6_vault', name: 'Kamar Rahasia Kristal 3D', x: 500, y: 545, label: 'Masuk Kamar Rahasia 3D', icon: '💎' },
+      { id: 'dp_6_vault', roomId: 'room_6_vault', name: 'Kamar Rahasia Kristal 3D', x: 1050, y: 545, label: 'Masuk Kamar Rahasia 3D', icon: '💎' },
     ],
     rooms: [
       {
@@ -3201,7 +3201,7 @@ export const GAME_LEVELS: GameLevel[] = [
       questDescription: 'Temukan 3 benda: ROCKET, PLANET, STAR.',
     },
     doorPortals: [
-      { id: 'dp_7_cockpit', roomId: 'room_7_cockpit', name: 'Kokpit Antariksa 3D', x: 500, y: 545, label: 'Masuk Kokpit 3D', icon: '🚀' },
+      { id: 'dp_7_cockpit', roomId: 'room_7_cockpit', name: 'Kokpit Antariksa 3D', x: 1050, y: 545, label: 'Masuk Kokpit 3D', icon: '🚀' },
     ],
     rooms: [
       {

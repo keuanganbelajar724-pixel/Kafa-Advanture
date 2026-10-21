@@ -22,6 +22,7 @@ import { PS3GraphicsModal } from './components/modals/PS3GraphicsModal';
 import { RoomConfig } from './types/game';
 import { DEFAULT_PS3_GRAPHICS } from './components/game/PS3GraphicsLayer';
 import { HarvestMoonFarm } from './components/harvest/HarvestMoonFarm';
+import { GAME_LEVELS } from './data/gameData';
 import { audio } from './services/audio';
 
 export default function App() {
@@ -106,14 +107,18 @@ export default function App() {
 
   const [activeRoom, setActiveRoom] = React.useState<RoomConfig | null>(null);
 
+  const allGameRooms = React.useMemo(() => {
+    return GAME_LEVELS.flatMap(lvl => lvl.rooms || []);
+  }, []);
+
   const handleEnterRoom = React.useCallback((roomId: string) => {
-    const room = currentLevel.rooms?.find(r => r.id === roomId);
+    const room = allGameRooms.find(r => r.id === roomId) || currentLevel.rooms?.find(r => r.id === roomId);
     if (room) {
       audio.playDoorOpen();
       setActiveRoom(room);
       showToast(`🚪 Masuk ke: ${room.nameId}`);
     }
-  }, [currentLevel.rooms, showToast]);
+  }, [allGameRooms, currentLevel.rooms, showToast]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden select-none bg-slate-950 font-sans">
@@ -132,6 +137,13 @@ export default function App() {
           saveData={saveData}
           onPlay={() => setCurrentScreen('GAME_WORLD')}
           onOpenFarm={() => setCurrentScreen('HARVEST_FARM')}
+          onOpen3DRoom={() => {
+            const firstRoom = allGameRooms[0] || (currentLevel.rooms && currentLevel.rooms[0]);
+            if (firstRoom) {
+              setActiveRoom(firstRoom);
+              setCurrentScreen('GAME_WORLD');
+            }
+          }}
           onOpenMap={() => setShowLevelSelectModal(true)}
           onOpenWords={() => setCurrentScreen('VOCAB_COLLECTION')}
           onOpenBadges={() => setCurrentScreen('BADGES')}
@@ -183,12 +195,21 @@ export default function App() {
             <div className="absolute inset-0 z-[650] bg-slate-950">
               <Room3DView
                 room={activeRoom}
+                allRooms={allGameRooms}
                 character={saveData.character}
                 discoveredWords={saveData.discoveredWords}
                 onInteractVocab={handleInteractVocab}
                 onCollectCoin={handleCollectCoin}
                 onCollectStar={handleCollectStar}
                 onUpdateCharacter={updateCharacter}
+                onChangeRoom={(roomId) => {
+                  const targetRoom = allGameRooms.find(r => r.id === roomId);
+                  if (targetRoom) {
+                    audio.playDoorOpen();
+                    setActiveRoom(targetRoom);
+                    showToast(`🚪 Pindah ke ${targetRoom.nameId}`);
+                  }
+                }}
                 onExitRoom={() => {
                   audio.playDoorClose();
                   setActiveRoom(null);

@@ -433,71 +433,217 @@ export const WaterProp: React.FC = () => (
 );
 
 export const DeskProp: React.FC = () => (
-  <svg width="140" height="110" viewBox="0 0 140 110" fill="none" className="filter drop-shadow-xl">
-    <rect x="15" y="35" width="110" height="24" rx="4" fill="#D97706" stroke="#92400E" strokeWidth="2.5" />
-    <rect x="22" y="55" width="96" height="15" fill="#B45309" />
-    {/* Desk legs */}
-    <rect x="20" y="55" width="10" height="50" rx="3" fill="#78350F" />
-    <rect x="110" y="55" width="10" height="50" rx="3" fill="#78350F" />
-    {/* Open notebook */}
-    <rect x="50" y="25" width="40" height="15" rx="2" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.5" />
+  <svg width="150" height="120" viewBox="0 0 150 120" fill="none" className="filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]">
+    <defs>
+      <linearGradient id="deskTopWood" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#F59E0B" />
+        <stop offset="40%" stopColor="#D97706" />
+        <stop offset="100%" stopColor="#92400E" />
+      </linearGradient>
+      <linearGradient id="deskFront" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#B45309" />
+        <stop offset="100%" stopColor="#78350F" />
+      </linearGradient>
+      <linearGradient id="metalLeg" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#64748B" />
+        <stop offset="50%" stopColor="#94A3B8" />
+        <stop offset="100%" stopColor="#475569" />
+      </linearGradient>
+    </defs>
+    {/* Metal Frame & Sturdy Tubular Legs */}
+    <rect x="22" y="58" width="10" height="52" rx="4" fill="url(#metalLeg)" stroke="#334155" strokeWidth="1.5" />
+    <rect x="118" y="58" width="10" height="52" rx="4" fill="url(#metalLeg)" stroke="#334155" strokeWidth="1.5" />
+    {/* Non-slip Rubber Feet */}
+    <rect x="20" y="105" width="14" height="7" rx="3" fill="#1E293B" />
+    <rect x="116" y="105" width="14" height="7" rx="3" fill="#1E293B" />
+    {/* Under-desk Book Compartment / Shelf */}
+    <path d="M26 56 L124 56 L120 74 L30 74 Z" fill="url(#deskFront)" stroke="#451A03" strokeWidth="1.5" />
+    {/* Textbooks stored under desk */}
+    <rect x="36" y="60" width="38" height="10" rx="2" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="1" />
+    <rect x="76" y="62" width="36" height="8" rx="2" fill="#10B981" stroke="#047857" strokeWidth="1" />
+    
+    {/* Desktop Beveled Surface */}
+    <rect x="12" y="32" width="126" height="24" rx="6" fill="url(#deskTopWood)" stroke="#78350F" strokeWidth="2.5" />
+    {/* Gloss Top Specular Sheen */}
+    <rect x="16" y="34" width="118" height="6" rx="3" fill="#FEF3C7" opacity="0.45" />
+
+    {/* Open Notebook with Colorful Pen & Bookmark */}
+    <rect x="36" y="24" width="46" height="20" rx="3" fill="#FFFFFF" stroke="#94A3B8" strokeWidth="1.5" />
+    <line x1="59" y1="24" x2="59" y2="44" stroke="#CBD5E1" strokeWidth="1.5" />
+    {/* Mini notebook text lines */}
+    <line x1="40" y1="29" x2="55" y2="29" stroke="#3B82F6" strokeWidth="1" strokeLinecap="round" />
+    <line x1="40" y1="34" x2="53" y2="34" stroke="#64748B" strokeWidth="1" strokeLinecap="round" />
+    <line x1="40" y1="39" x2="55" y2="39" stroke="#64748B" strokeWidth="1" strokeLinecap="round" />
+    <line x1="63" y1="29" x2="78" y2="29" stroke="#EF4444" strokeWidth="1" strokeLinecap="round" />
+    <line x1="63" y1="34" x2="76" y2="34" stroke="#64748B" strokeWidth="1" strokeLinecap="round" />
+    {/* Bookmark ribbon */}
+    <path d="M57 24 L57 40 L60 37 L63 40 L63 24 Z" fill="#F43F5E" />
+
+    {/* Ceramic Pencil Cup with Colored Pencils */}
+    <rect x="94" y="20" width="18" height="22" rx="4" fill="#0EA5E9" stroke="#0284C7" strokeWidth="1.5" />
+    <line x1="98" y1="20" x2="94" y2="8" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="103" y1="20" x2="103" y2="6" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="108" y1="20" x2="111" y2="10" stroke="#EC4899" strokeWidth="2.5" strokeLinecap="round" />
+
+    {/* Shiny Red Teacher's Apple */}
+    <circle cx="122" cy="28" r="8" fill="#EF4444" stroke="#991B1B" strokeWidth="1.5" />
+    <path d="M122 20 Q124 16 126 15" stroke="#78350F" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+    <ellipse cx="126" cy="17" rx="3" ry="1.5" fill="#22C55E" transform="rotate(-20 126 17)" />
   </svg>
 );
 
 export const PencilProp: React.FC = () => (
-  <svg width="120" height="90" viewBox="0 0 120 90" fill="none" className="filter drop-shadow-xl">
-    <g transform="rotate(-30 60 45)">
-      {/* Pencil Body */}
-      <rect x="30" y="40" width="70" height="18" rx="3" fill="#FACC15" stroke="#CA8A04" strokeWidth="2" />
-      <line x1="30" y1="46" x2="100" y2="46" stroke="#EAB308" strokeWidth="1.5" />
-      <line x1="30" y1="52" x2="100" y2="52" stroke="#EAB308" strokeWidth="1.5" />
-      {/* Eraser */}
-      <rect x="100" y="40" width="15" height="18" rx="3" fill="#F472B6" stroke="#BE123C" strokeWidth="1.5" />
-      {/* Ferrule band */}
-      <rect x="96" y="40" width="6" height="18" fill="#94A3B8" />
-      {/* Wooden Tip */}
-      <polygon points="30,40 10,49 30,58" fill="#FED7AA" stroke="#EA580C" strokeWidth="1.5" />
-      {/* Lead Tip */}
-      <polygon points="16,46 10,49 16,52" fill="#0F172A" />
+  <svg width="130" height="95" viewBox="0 0 130 95" fill="none" className="filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)]">
+    <g transform="rotate(-28 65 48)">
+      {/* Pencil Body Facets */}
+      <rect x="34" y="38" width="68" height="20" rx="3" fill="#FACC15" stroke="#CA8A04" strokeWidth="2" />
+      <rect x="34" y="44" width="68" height="8" fill="#FDE047" opacity="0.7" />
+      <line x1="34" y1="44" x2="102" y2="44" stroke="#CA8A04" strokeWidth="1.2" />
+      <line x1="34" y1="52" x2="102" y2="52" stroke="#CA8A04" strokeWidth="1.2" />
+      
+      {/* Metallic Ferrule Band with Embossed Crimps */}
+      <rect x="102" y="38" width="10" height="20" rx="1" fill="#94A3B8" stroke="#64748B" strokeWidth="1.5" />
+      <line x1="105" y1="38" x2="105" y2="58" stroke="#CBD5E1" strokeWidth="1.2" />
+      <line x1="109" y1="38" x2="109" y2="58" stroke="#64748B" strokeWidth="1.2" />
+
+      {/* Soft Pink Rubber Eraser with Rounded Edge */}
+      <rect x="112" y="39" width="14" height="18" rx="4" fill="#F472B6" stroke="#DB2777" strokeWidth="1.5" />
+      <path d="M114 41 L124 41" stroke="#FBCFE8" strokeWidth="1.5" strokeLinecap="round" />
+
+      {/* Sharpened Cedar Wood Cone Tip */}
+      <polygon points="34,38 12,48 34,58" fill="#FED7AA" stroke="#EA580C" strokeWidth="1.5" />
+      {/* Natural Wood Grain on Cone */}
+      <path d="M26 42 Q28 48 26 54" stroke="#FDBA74" strokeWidth="1.2" fill="none" />
+
+      {/* Graphite Lead Point */}
+      <polygon points="19,45 12,48 19,51" fill="#0F172A" stroke="#020617" strokeWidth="1" />
+      {/* Specular Lead Highlight */}
+      <circle cx="15" cy="47.5" r="1" fill="#94A3B8" />
     </g>
   </svg>
 );
 
 export const RulerProp: React.FC = () => (
-  <svg width="140" height="70" viewBox="0 0 140 70" fill="none" className="filter drop-shadow-xl">
-    <rect x="10" y="25" width="120" height="28" rx="4" fill="#FDE047" stroke="#CA8A04" strokeWidth="2" />
-    {[20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120].map((x, i) => (
-      <line key={i} x1={x} y1="25" x2={x} y2={i % 2 === 0 ? "38" : "32"} stroke="#78350F" strokeWidth="1.5" />
+  <svg width="150" height="75" viewBox="0 0 150 75" fill="none" className="filter drop-shadow-[0_8px_18px_rgba(0,0,0,0.4)]">
+    <defs>
+      <linearGradient id="rulerWood" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#FEF08A" />
+        <stop offset="50%" stopColor="#FDE047" />
+        <stop offset="100%" stopColor="#EAB308" />
+      </linearGradient>
+    </defs>
+    {/* Ruler Solid Plank */}
+    <rect x="10" y="24" width="130" height="30" rx="5" fill="url(#rulerWood)" stroke="#B45309" strokeWidth="2.5" />
+    {/* Top Edge Gloss Highlight */}
+    <rect x="12" y="25" width="126" height="5" rx="2" fill="#FFFFFF" opacity="0.6" />
+
+    {/* Metric Calibration Ticks */}
+    {[18, 28, 38, 48, 58, 68, 78, 88, 98, 108, 118, 128].map((x, i) => (
+      <g key={i}>
+        <line x1={x} y1="24" x2={x} y2={i % 2 === 0 ? "40" : "34"} stroke="#78350F" strokeWidth="1.8" strokeLinecap="round" />
+        {i % 2 === 0 && (
+          <text x={x - 3} y="49" fontSize="8" fontWeight="900" fill="#78350F" fontFamily="monospace">
+            {i}
+          </text>
+        )}
+      </g>
     ))}
-    <text x="65" y="46" fontSize="10" fontWeight="bold" fill="#78350F">CM</text>
+    {/* Centimeter Brand Badge */}
+    <text x="116" y="49" fontSize="8.5" fontWeight="900" fill="#92400E" fontFamily="sans-serif">
+      CM
+    </text>
+    {/* Mini Star Stamp */}
+    <circle cx="22" cy="46" r="3" fill="#F59E0B" />
   </svg>
 );
 
 export const BoardProp: React.FC = () => (
-  <svg width="150" height="110" viewBox="0 0 150 110" fill="none" className="filter drop-shadow-xl">
-    {/* Wooden Frame */}
-    <rect x="10" y="15" width="130" height="85" rx="6" fill="#78350F" stroke="#451A03" strokeWidth="3" />
-    {/* Green Chalkboard */}
-    <rect x="18" y="23" width="114" height="69" rx="3" fill="#15803D" />
-    {/* ABC Chalk Writing */}
-    <text x="32" y="58" fontSize="22" fontWeight="bold" fill="#FFFFFF" opacity="0.95" fontFamily="monospace">A B C</text>
-    <text x="32" y="76" fontSize="12" fontWeight="bold" fill="#FEF08A" opacity="0.9">1 + 2 = 3</text>
+  <svg width="160" height="120" viewBox="0 0 160 120" fill="none" className="filter drop-shadow-[0_14px_28px_rgba(0,0,0,0.55)]">
+    <defs>
+      <linearGradient id="chalkboardWood" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#92400E" />
+        <stop offset="50%" stopColor="#78350F" />
+        <stop offset="100%" stopColor="#451A03" />
+      </linearGradient>
+      <linearGradient id="chalkSlate" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#064E3B" />
+        <stop offset="50%" stopColor="#065F46" />
+        <stop offset="100%" stopColor="#047857" />
+      </linearGradient>
+    </defs>
+    {/* Solid Hardwood Frame with Beveled Edges */}
+    <rect x="8" y="12" width="144" height="92" rx="7" fill="url(#chalkboardWood)" stroke="#451A03" strokeWidth="3" />
+    {/* Inner Shadow Recess */}
+    <rect x="15" y="19" width="130" height="74" rx="4" fill="#022C22" opacity="0.6" />
+    
+    {/* Classic School Deep Sage Green Chalkboard */}
+    <rect x="16" y="20" width="128" height="72" rx="4" fill="url(#chalkSlate)" />
+    
+    {/* Decorative Compass & Stars Chalk Art */}
+    <text x="24" y="44" fontSize="16" fontWeight="900" fill="#FFFFFF" opacity="0.95" fontFamily="monospace">
+      A B C • 1 2 3
+    </text>
+    <text x="24" y="64" fontSize="11" fontWeight="bold" fill="#FEF08A" opacity="0.95" fontFamily="monospace">
+      2 + 3 = 5 🌟
+    </text>
+    <text x="24" y="80" fontSize="9" fontWeight="bold" fill="#6EE7B7" opacity="0.9" fontFamily="sans-serif">
+      "Rajin Belajar, Pintar!"
+    </text>
+
+    {/* Hanging Wooden Chalk Tray Ledge */}
+    <rect x="12" y="98" width="136" height="8" rx="3" fill="#B45309" stroke="#78350F" strokeWidth="1.5" />
+    {/* Colored Chalk Sticks resting on tray */}
+    <rect x="24" y="96" width="14" height="4" rx="1.5" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="0.5" />
+    <rect x="42" y="96" width="14" height="4" rx="1.5" fill="#FDE047" stroke="#EAB308" strokeWidth="0.5" />
+    <rect x="60" y="96" width="14" height="4" rx="1.5" fill="#67E8F9" stroke="#06B6D4" strokeWidth="0.5" />
+    {/* Felt Chalkboard Eraser */}
+    <rect x="106" y="94" width="22" height="7" rx="2" fill="#451A03" stroke="#291003" strokeWidth="1" />
+    <rect x="106" y="98" width="22" height="3" fill="#D6D3D1" />
   </svg>
 );
 
 export const ClockProp: React.FC = () => (
-  <svg width="110" height="110" viewBox="0 0 110 110" fill="none" className="filter drop-shadow-xl">
-    <circle cx="55" cy="55" r="45" fill="#FFFFFF" stroke="#0284C7" strokeWidth="4" />
-    <circle cx="55" cy="55" r="41" fill="#F0F9FF" />
-    {/* Clock Numbers / Dots */}
-    <circle cx="55" cy="20" r="3" fill="#0369A1" />
-    <circle cx="90" cy="55" r="3" fill="#0369A1" />
-    <circle cx="55" cy="90" r="3" fill="#0369A1" />
-    <circle cx="20" cy="55" r="3" fill="#0369A1" />
-    {/* Hands (9 o'clock) */}
-    <line x1="55" y1="55" x2="35" y2="55" stroke="#0F172A" strokeWidth="3.5" strokeLinecap="round" />
-    <line x1="55" y1="55" x2="55" y2="28" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" />
-    <circle cx="55" cy="55" r="4" fill="#0F172A" />
+  <svg width="120" height="120" viewBox="0 0 120 120" fill="none" className="filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]">
+    <defs>
+      <linearGradient id="clockBezel" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#38BDF8" />
+        <stop offset="50%" stopColor="#0284C7" />
+        <stop offset="100%" stopColor="#0369A1" />
+      </linearGradient>
+    </defs>
+    {/* Thick Molded Polycarbonate Chrome Ring Bezel */}
+    <circle cx="60" cy="60" r="50" fill="url(#clockBezel)" stroke="#0C4A6E" strokeWidth="3" />
+    {/* Inner White Dial Face */}
+    <circle cx="60" cy="60" r="42" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="2" />
+    
+    {/* Numerals (12, 3, 6, 9) */}
+    <text x="56" y="30" fontSize="11" fontWeight="900" fill="#0F172A" fontFamily="sans-serif">12</text>
+    <text x="92" y="64" fontSize="11" fontWeight="900" fill="#0F172A" fontFamily="sans-serif">3</text>
+    <text x="57" y="96" fontSize="11" fontWeight="900" fill="#0F172A" fontFamily="sans-serif">6</text>
+    <text x="22" y="64" fontSize="11" fontWeight="900" fill="#0F172A" fontFamily="sans-serif">9</text>
+    
+    {/* Subtle Hour Dots */}
+    <circle cx="78" cy="27" r="2" fill="#64748B" />
+    <circle cx="93" cy="42" r="2" fill="#64748B" />
+    <circle cx="93" cy="78" r="2" fill="#64748B" />
+    <circle cx="78" cy="93" r="2" fill="#64748B" />
+    <circle cx="42" cy="93" r="2" fill="#64748B" />
+    <circle cx="27" cy="78" r="2" fill="#64748B" />
+    <circle cx="27" cy="42" r="2" fill="#64748B" />
+    <circle cx="42" cy="27" r="2" fill="#64748B" />
+
+    {/* Hour Hand (Points to 10) */}
+    <line x1="60" y1="60" x2="42" y2="44" stroke="#0F172A" strokeWidth="4" strokeLinecap="round" />
+    {/* Minute Hand (Points to 2) */}
+    <line x1="60" y1="60" x2="80" y2="38" stroke="#0F172A" strokeWidth="2.8" strokeLinecap="round" />
+    {/* Sweeping Red Second Hand */}
+    <line x1="60" y1="64" x2="60" y2="24" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" />
+    
+    {/* Center Pin Cover */}
+    <circle cx="60" cy="60" r="4.5" fill="#EF4444" stroke="#991B1B" strokeWidth="1.2" />
+
+    {/* Convex Glass Dome Curved Reflection */}
+    <path d="M26 44 A38 38 0 0 1 94 44" stroke="#FFFFFF" strokeWidth="4" opacity="0.45" strokeLinecap="round" fill="none" />
   </svg>
 );
 

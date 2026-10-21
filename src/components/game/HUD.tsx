@@ -265,6 +265,37 @@ export const HUD: React.FC<HUDProps> = ({
               </div>
             )}
 
+            {/* Quick Atmosphere Lighting Button (☀️ Cerah / 🌅 Senja / 🌌 Malam / 🌈 Wonder) */}
+            {onOpenPS3Graphics && (
+              <button
+                onClick={() => {
+                  audio.playButtonClick();
+                  onOpenPS3Graphics();
+                }}
+                className="h-8 px-2 sm:px-2.5 rounded-xl bg-purple-950/80 hover:bg-purple-900/80 text-amber-300 border border-purple-400/50 shadow-md font-game font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+                title="Atur Grafis PS3 HD & Pencahayaan Langit"
+              >
+                <span>
+                  {saveData.graphicSettings?.atmospherePreset === 'golden'
+                    ? '🌅'
+                    : saveData.graphicSettings?.atmospherePreset === 'night'
+                    ? '🌌'
+                    : saveData.graphicSettings?.atmospherePreset === 'wonder'
+                    ? '🌈'
+                    : '☀️'}
+                </span>
+                <span className="hidden md:inline text-[10px] font-black uppercase">
+                  {saveData.graphicSettings?.atmospherePreset === 'golden'
+                    ? 'SENJA'
+                    : saveData.graphicSettings?.atmospherePreset === 'night'
+                    ? 'MALAM'
+                    : saveData.graphicSettings?.atmospherePreset === 'wonder'
+                    ? 'WONDER'
+                    : 'CERAH'}
+                </span>
+              </button>
+            )}
+
             {/* Menu Game */}
             <button
               onClick={() => {

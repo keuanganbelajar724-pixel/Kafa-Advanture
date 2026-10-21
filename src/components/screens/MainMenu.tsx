@@ -13,6 +13,7 @@ interface MainMenuProps {
   onOpenBadges: () => void;
   onOpenCharacter: () => void;
   onOpenPS3Graphics?: () => void;
+  onOpen3DRoom?: () => void;
   onToggleMusic: () => void;
   onToggleSfx: () => void;
   onToggleLanguage: () => void;
@@ -28,6 +29,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onOpenBadges,
   onOpenCharacter,
   onOpenPS3Graphics,
+  onOpen3DRoom,
   onToggleMusic,
   onToggleSfx,
   onToggleLanguage,
@@ -204,6 +206,25 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               <span>🚜</span>
               <span>KEBUN HARVEST MOON</span>
               <span>🌾</span>
+            </motion.button>
+          )}
+
+          {/* 3. 3D INTERIOR ROOM EXPLORATION DIRECT BUTTON */}
+          {onOpen3DRoom && (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                audio.playDoorOpen();
+                onOpen3DRoom();
+              }}
+              className="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 hover:from-blue-500 text-white font-black text-xl md:text-2xl rounded-2xl shadow-[0_10px_25px_rgba(99,102,241,0.5)] border-4 border-amber-300 font-game flex items-center justify-center gap-3 cursor-pointer group"
+            >
+              <span>🚪</span>
+              <span>RUANGAN 3D INTERAKTIF</span>
+              <span className="text-xs bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full font-black animate-pulse">
+                REAL 3D
+              </span>
             </motion.button>
           )}
 

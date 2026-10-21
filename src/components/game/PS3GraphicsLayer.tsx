@@ -24,6 +24,9 @@ export const DEFAULT_PS3_GRAPHICS: PS3GraphicSettings = {
   dualshockPrompts: true,
   highDefShadows: true,
   cameraZoom: 'wide',
+  atmospherePreset: 'day',
+  floorReflections: true,
+  impactJuice: true,
 };
 
 export const PS3GraphicsLayer: React.FC<PS3GraphicsLayerProps> = ({
@@ -39,6 +42,33 @@ export const PS3GraphicsLayer: React.FC<PS3GraphicsLayerProps> = ({
 }) => {
   // Theme-specific light colors & ambience (PS3 Color Grading)
   const getThemeAtmosphere = () => {
+    // Custom atmosphere overrides if user selected a mood
+    if (settings.atmospherePreset === 'golden') {
+      return {
+        rayColor: 'from-orange-400/25 via-amber-300/10 to-transparent',
+        bokehColors: ['bg-orange-400/35', 'bg-amber-300/30', 'bg-yellow-400/25'],
+        particleEmoji: ['🍂', '✨', '🌟', '🌾'],
+        ambientTint: 'bg-gradient-to-b from-orange-600/15 via-amber-500/5 to-amber-950/25',
+      };
+    }
+    if (settings.atmospherePreset === 'night') {
+      return {
+        rayColor: 'from-indigo-400/20 via-sky-300/5 to-transparent',
+        bokehColors: ['bg-indigo-400/35', 'bg-cyan-300/30', 'bg-sky-400/25'],
+        particleEmoji: ['⭐', '✨', '🌟', '🌙'],
+        ambientTint: 'bg-gradient-to-b from-slate-950/45 via-indigo-950/20 to-black/35',
+      };
+    }
+    if (settings.atmospherePreset === 'wonder') {
+      return {
+        rayColor: 'from-fuchsia-400/30 via-cyan-300/15 to-transparent',
+        bokehColors: ['bg-fuchsia-400/35', 'bg-cyan-300/35', 'bg-emerald-300/25'],
+        particleEmoji: ['💎', '✨', '🌈', '⭐'],
+        ambientTint: 'bg-gradient-to-b from-fuchsia-950/20 via-transparent to-cyan-950/20',
+      };
+    }
+
+    // Default by level theme
     switch (levelId) {
       case 1: // Little Home
         return {
@@ -219,6 +249,66 @@ export const PS3GraphicsLayer: React.FC<PS3GraphicsLayerProps> = ({
               {p.emoji}
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 3B. SPECULAR FLOOR REFLECTIONS (RAY-TRACED POLISHED FLOOR) */}
+      {/* ======================================================== */}
+      {settings.floorReflections && (
+        <div
+          className="absolute inset-0 pointer-events-none z-[290] overflow-hidden will-change-transform"
+          style={{
+            transform: `scale(${worldScale}) translateX(-${cameraX}px)`,
+            transformOrigin: 'top left',
+            width: `${worldWidth}px`,
+            height: `${worldHeight}px`,
+          }}
+        >
+          {/* Subtle glossy floor reflection line at ground level */}
+          <div
+            className="absolute left-0 right-0 h-10 pointer-events-none"
+            style={{
+              top: '550px',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(245,158,11,0.04) 40%, transparent 100%)',
+              mixBlendMode: 'screen',
+            }}
+          />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 3C. HERO DYNAMIC RIM-LIGHT SPOTLIGHT & HALO               */}
+      {/* ======================================================== */}
+      {settings.heroRimLight && (
+        <div
+          className="absolute inset-0 pointer-events-none z-[360] overflow-hidden will-change-transform"
+          style={{
+            transform: `scale(${worldScale}) translateX(-${cameraX}px)`,
+            transformOrigin: 'top left',
+            width: `${worldWidth}px`,
+            height: `${worldHeight}px`,
+          }}
+        >
+          {/* Light source follow halo */}
+          <div
+            className="absolute rounded-full pointer-events-none filter blur-2xl opacity-40 transition-all duration-75"
+            style={{
+              left: `${cameraX + 400}px`,
+              top: '480px',
+              width: '260px',
+              height: '180px',
+              background:
+                settings.atmospherePreset === 'golden'
+                  ? 'radial-gradient(circle, rgba(245,158,11,0.45) 0%, rgba(217,119,6,0.15) 50%, transparent 75%)'
+                  : settings.atmospherePreset === 'night'
+                  ? 'radial-gradient(circle, rgba(56,189,248,0.4) 0%, rgba(99,102,241,0.15) 50%, transparent 75%)'
+                  : settings.atmospherePreset === 'wonder'
+                  ? 'radial-gradient(circle, rgba(236,72,153,0.4) 0%, rgba(168,85,247,0.15) 50%, transparent 75%)'
+                  : 'radial-gradient(circle, rgba(254,240,138,0.45) 0%, rgba(245,158,11,0.15) 50%, transparent 75%)',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
         </div>
       )}
 
