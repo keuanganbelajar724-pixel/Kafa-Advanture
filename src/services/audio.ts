@@ -1063,6 +1063,35 @@ class AudioEngine {
     });
   }
 
+  public playBell() {
+    if (!this.sfxEnabled || this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // Classic School Bell Westminster chime notes (E5, C5, D5, G4)
+    const bellNotes = [
+      { f: 659.25, t: 0, d: 0.35 },
+      { f: 523.25, t: 0.32, d: 0.35 },
+      { f: 587.33, t: 0.64, d: 0.35 },
+      { f: 392.00, t: 0.96, d: 0.65 },
+    ];
+
+    bellNotes.forEach(n => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(n.f, now + n.t);
+      gain.gain.setValueAtTime(0.22, now + n.t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + n.t);
+      osc.stop(now + n.t + n.d);
+    });
+  }
+
   // --- Background ambient chimes (playful, gentle, warm) ---
   public startAmbientMusic() {
     if (!this.musicEnabled || this.bgmInterval) return;

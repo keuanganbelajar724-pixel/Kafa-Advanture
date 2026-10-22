@@ -405,8 +405,16 @@ export const GameWorld: React.FC<GameWorldProps> = ({
     setGlobeSpinCount(c => c + 1);
     audio.playCoin();
     onCollectCoin(2);
-    spawnDust(270, level.groundY - 15, 1.8);
-    spawnFloatingScore(270, level.groundY - 70, '🌍 KELILING DUNIA! +2 🪙', '#38BDF8');
+    spawnDust(200, level.groundY - 15, 1.8);
+    const globeFacts = [
+      '🇮🇩 Indonesia: Negara kepulauan terbesar dengan 17.000+ pulau! +2 🪙',
+      '🌍 Bumi berotasi 24 jam sehari menghasilkan siang & malam! +2 🪙',
+      '🏔️ Gunung Everest adalah puncak tertinggi di planet Bumi! +2 🪙',
+      '🌊 Samudra Pasifik menutupi lebih dari 30% permukaan Bumi! +2 🪙',
+      '🌳 Hutan hujan tropis Nusantara adalah paru-paru dunia! +2 🪙',
+    ];
+    const fact = globeFacts[Math.floor(Math.random() * globeFacts.length)];
+    spawnFloatingScore(200, level.groundY - 75, fact, '#38BDF8');
   }, [level.groundY, onCollectCoin, spawnDust, spawnFloatingScore]);
 
   const triggerHeroEmote = useCallback((emoteType: 'dance' | 'wave' | 'star') => {
@@ -1899,31 +1907,59 @@ export const GameWorld: React.FC<GameWorldProps> = ({
             />
           ))}
 
-          {/* THEMATIC CLASSROOM BANNERS & EDUCATIONAL FLAGS */}
+          {/* THEMATIC ARCHITECTURAL WALL PLAQUES (INTEGRATED ONTO WALL, NEVER OVERLAPS HUD) */}
           {level.areaId === 'area_school' && (
-            <div className="absolute top-5 left-0 w-full pointer-events-none select-none z-10">
-              {[500, 2200, 3900, 5600, 7300, 9000].map(bX => (
-                <div key={bX} className="absolute flex flex-col items-center" style={{ left: `${bX}px` }}>
-                  {/* Floating Motivational Banner */}
-                  <div className="px-5 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs font-game border-2 border-white shadow-[0_4px_20px_rgba(245,158,11,0.7)] flex items-center gap-2 tracking-wide ring-2 ring-amber-300/40">
-                    <span className="text-sm animate-bounce">⭐</span>
-                    <span>KELAS PINTAR SAHABAT KAFA</span>
-                    <span className="text-sm animate-bounce">👑</span>
-                  </div>
-                  {/* Colorful Subject Pennants */}
-                  <div className="flex items-center gap-3 mt-1 opacity-80 text-sm">
-                    <span>📐</span>
-                    <span>🔬</span>
-                    <span>🎨</span>
-                    <span>📚</span>
-                    <span>🎵</span>
+            <div className="absolute top-[148px] left-0 w-full pointer-events-none select-none z-20">
+              {/* Classroom blackboard header crest directly atop chalkboard */}
+              <div 
+                className="absolute flex flex-col items-center pointer-events-auto cursor-pointer group" 
+                style={{ left: '460px' }}
+                onClick={() => {
+                  audio.playButtonClick();
+                  setBlackboardInitialTab('QUIZ');
+                  setShowClassroomBlackboardModal(true);
+                }}
+                title="Buka Papan Tulis Kelas Sahabat Kafa"
+              >
+                <div className="px-5 py-1.5 rounded-2xl bg-gradient-to-r from-amber-950 via-stone-900 to-amber-950 text-amber-300 font-black text-xs font-game border-2 border-amber-400 shadow-[0_4px_16px_rgba(245,158,11,0.5)] flex items-center gap-2 tracking-wide ring-2 ring-amber-400/40 group-hover:scale-105 group-hover:border-amber-300 transition-transform">
+                  <span className="text-sm animate-bounce">🏫</span>
+                  <span>KELAS PINTAR SAHABAT KAFA • 3A</span>
+                  <span className="text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full font-black animate-pulse">BUKA</span>
+                </div>
+              </div>
+
+              {[
+                { x: 2300, text: '🌿 TAMAN BELAJAR • ALAM SEMESTA', icon: '🌱' },
+                { x: 4000, text: '🎨 GALERI SENI & KREATIVITAS SISWA', icon: '🎨' },
+                { x: 5700, text: '🔬 LABORATORIUM SAINS & ASTRONOMI', icon: '🚀' },
+                { x: 7400, text: '📖 PERPUSTAKAAN & LITERASI PINTAR', icon: '📚' },
+                { x: 9100, text: '🏆 HALL OF FAME JUARA NUSANTARA', icon: '👑' },
+              ].map(b => (
+                <div key={b.x} className="absolute flex flex-col items-center" style={{ left: `${b.x}px` }}>
+                  <div className="px-4 py-1 rounded-xl bg-gradient-to-r from-amber-950 via-stone-900 to-amber-950 text-amber-300 font-black text-[11px] font-game border border-amber-400/70 shadow-lg flex items-center gap-1.5 tracking-wide ring-1 ring-amber-400/30">
+                    <span>{b.icon}</span>
+                    <span>{b.text}</span>
                   </div>
                 </div>
               ))}
 
-              {/* Classroom Wall Clock with Ticking Animation */}
-              <div className="absolute left-[540px] top-[100px] w-13 h-13 rounded-full bg-slate-900/90 border-3 border-amber-400 shadow-xl flex items-center justify-center text-lg filter drop-shadow">
-                <span className="animate-pulse">🕒</span>
+              {/* Classroom Wall Clock with Real Polished Dial, Westminster Chime & Ticking Hands */}
+              <div 
+                onClick={() => {
+                  audio.playBell();
+                  spawnFloatingScore(740, 180, '⏰ 07:30 - Bel Sekolah Berbunyi! Waktunya Belajar! 🔔', '#FBBF24');
+                }}
+                className="absolute left-[740px] top-[-6px] w-13 h-13 rounded-full bg-slate-900 border-2 border-amber-400 shadow-xl flex items-center justify-center filter drop-shadow relative cursor-pointer pointer-events-auto group hover:scale-110 active:scale-95 transition-transform"
+                title="Jam Kelas: Klik untuk mendengar Bel Sekolah & Cek Waktu"
+              >
+                <div className="w-11 h-11 rounded-full bg-amber-50 border border-amber-700/40 relative flex items-center justify-center">
+                  <div className="w-1 h-3.5 bg-slate-900 rounded-full origin-bottom transform -rotate-45" />
+                  <div className="w-0.5 h-4 bg-rose-600 rounded-full origin-bottom animate-spin" style={{ animationDuration: '60s' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-700 absolute" />
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -bottom-7 px-2 py-0.5 rounded-full bg-slate-950/90 border border-amber-400 text-[8.5px] font-black text-amber-300 font-game whitespace-nowrap shadow-md pointer-events-none">
+                  ⏰ 07:30 BEL KELAS
+                </div>
               </div>
             </div>
           )}
@@ -1961,7 +1997,7 @@ export const GameWorld: React.FC<GameWorldProps> = ({
           ))}
         </div>
 
-        {/* LAYER 2: SOLID & DISTINCT GROUND PLATFORM PLANE (3D PERSPECTIVE TERRAIN) */}
+        {/* LAYER 2: SOLID & DISTINCT GROUND PLATFORM PLANE (3D PERSPECTIVE TERRAIN & FOUNDATION) */}
         {(() => {
           const isIndoor = level.areaId === 'area_school' || level.areaId === 'area_home';
           const isNature = level.areaId === 'area_park' || level.areaId === 'area_city';
@@ -1994,53 +2030,30 @@ export const GameWorld: React.FC<GameWorldProps> = ({
                 <div className="absolute inset-x-0 bottom-0 h-[2px] bg-amber-300 shadow-[0_0_8px_rgba(245,158,11,1)]" />
               </div>
 
-              {/* 3D BEVELED FRONT CLIFF / FOUNDATION FACADE (Cross-Section Architecture with Embedded Crystals & Ancient Coins!) */}
+              {/* 3D SOLID ARCHITECTURAL FOUNDATION CROSS-SECTION */}
               <div
                 className={`w-full h-full relative overflow-hidden ${
                   isIndoor
-                    ? 'bg-gradient-to-b from-slate-900 via-slate-950 to-black border-t-2 border-amber-500/60'
+                    ? 'bg-gradient-to-b from-[#2e1509] via-[#1a0c05] to-[#0d0602]'
                     : isNature
-                    ? 'bg-gradient-to-b from-emerald-950 via-slate-950 to-black border-t-2 border-emerald-500/60'
-                    : 'bg-gradient-to-b from-stone-900 via-slate-950 to-black border-t-2 border-amber-500/60'
+                    ? 'bg-gradient-to-b from-[#1c2e15] via-[#101c0b] to-[#080d05]'
+                    : 'bg-gradient-to-b from-stone-900 via-slate-950 to-black'
                 }`}
               >
-                {/* Ambient Occlusion Shadow Strip underneath the rim */}
-                <div className="w-full h-6 bg-gradient-to-b from-black/90 to-transparent" />
-
-                {/* Subterranean Clean Brick / Stone Ashlar Masonry Pattern */}
-                <div className="absolute inset-0 opacity-25 bg-[repeating-linear-gradient(0deg,#334155_2px,transparent_2px,transparent_38px),repeating-linear-gradient(90deg,#334155_2px,transparent_2px,transparent_76px)]" />
-
-                {/* Subterranean Glowing Tech Conduits with Pulsing Blue/Amber Energy Nodes */}
-                <div className="absolute inset-x-0 top-4 h-1.5 bg-gradient-to-r from-amber-500/40 via-cyan-400/50 to-amber-500/40 shadow-[0_0_12px_rgba(56,189,248,0.7)]" />
-
-                {/* Embedded Glowing Treasures & Crystals in Foundation Every 220px */}
-                <div className="absolute inset-x-0 top-6 flex justify-around pointer-events-none select-none">
-                  {[240, 520, 800, 1100, 1400, 1700, 2000, 2300, 2600, 2900, 3200, 3500, 3800, 4100, 4400, 4700, 5000, 5300, 5600, 5900, 6200, 6500, 6800, 7100, 7400, 7700, 8000, 8300, 8600, 8900, 9200, 9500].map((px, idx) => (
-                    <div key={px} className="absolute flex flex-col items-center gap-1" style={{ left: `${px}px` }}>
-                      {/* Alternating embedded golden coins, crystals, and royal sconces */}
-                      {idx % 3 === 0 ? (
-                        <div className="px-2 py-0.5 rounded-full bg-slate-900/95 border border-amber-400/80 shadow-[0_0_15px_rgba(245,158,11,0.7)] flex items-center gap-1 text-[10px] text-amber-300 font-bold font-game">
-                          <span className="animate-pulse">🪙</span>
-                          <span className="text-[9px]">EMAS</span>
-                        </div>
-                      ) : idx % 3 === 1 ? (
-                        <div className="w-7 h-7 rounded-lg bg-cyan-950/80 border border-cyan-400/70 flex items-center justify-center text-xs shadow-[0_0_15px_rgba(56,189,248,0.6)] animate-pulse">
-                          💎
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <div className="w-5 h-5 rounded-full bg-amber-500/30 border border-amber-400 flex items-center justify-center text-[10px] shadow-[0_0_12px_rgba(245,158,11,0.8)]">
-                            💡
-                          </div>
-                          <div className="w-1 h-3 bg-gradient-to-b from-amber-400 to-amber-700" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                {/* Polished Wainscot Skirting Molding / Floor Joist Trim */}
+                <div className="w-full h-9 bg-gradient-to-b from-amber-950 via-[#3b1709] to-[#200c05] border-b-2 border-amber-600/40 relative shadow-lg">
+                  <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-amber-400/80 via-yellow-300/80 to-amber-400/80" />
+                  <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(90deg,#000,#000_2px,transparent_2px,transparent_60px)]" />
                 </div>
 
-                {/* Soft Foundation Ground Ambient Shadow */}
-                <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-slate-950/80 to-transparent pointer-events-none" />
+                {/* Subterranean Structural Stone & Wood Joists Grid Pattern */}
+                <div className="absolute inset-x-0 top-9 bottom-0 opacity-20 bg-[repeating-linear-gradient(0deg,#78350f_2px,transparent_2px,transparent_42px),repeating-linear-gradient(90deg,#78350f_2px,transparent_2px,transparent_84px)]" />
+
+                {/* Warm Ambient Sub-floor Ground Wash */}
+                <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 via-transparent to-black/70 pointer-events-none" />
+
+                {/* Soft Foundation Depth Gradient */}
+                <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none" />
               </div>
             </div>
           );
@@ -2069,7 +2082,7 @@ export const GameWorld: React.FC<GameWorldProps> = ({
             onClick={triggerSpinGlobe}
             className="absolute cursor-pointer pointer-events-auto flex flex-col items-center group z-30"
             style={{
-              left: '260px',
+              left: '200px',
               top: `${level.groundY - 65}px`,
             }}
             title="Putar Bola Dunia (+2 Koin 🪙)"
@@ -2135,8 +2148,8 @@ export const GameWorld: React.FC<GameWorldProps> = ({
               }}
               className="absolute flex items-center justify-center pointer-events-none"
               style={{
-                left: `${col.x}px`,
-                top: `${col.y}px`,
+                left: `${col.x - 20}px`,
+                top: `${col.y >= 520 ? level.groundY - 45 : col.y - 20}px`,
                 zIndex: Math.floor(col.y) + 5,
               }}
             >
@@ -2761,20 +2774,22 @@ export const GameWorld: React.FC<GameWorldProps> = ({
           const isNear = nearVocab?.id === item.id;
           const isNextTarget = nextTargetWordId === item.id;
           const isBouncing = bouncingItemId === item.id;
+          const itemGroundY = item.worldPosition.y >= 500 ? level.groundY : item.worldPosition.y;
 
           return (
             <div
               key={item.id}
               onClick={() => handleItemInteract(item)}
-              className="absolute cursor-pointer transition-transform duration-200 flex flex-col items-center group"
+              className="absolute cursor-pointer transition-transform duration-200 flex flex-col items-center group pointer-events-auto"
               style={{
-                left: `${item.worldPosition.x - 70}px`,
-                top: `${item.worldPosition.y - 80}px`,
-                zIndex: Math.floor(item.worldPosition.y),
+                left: `${item.worldPosition.x}px`,
+                top: `${itemGroundY}px`,
+                transform: 'translate(-50%, -100%)',
+                zIndex: Math.floor(itemGroundY) + 3,
               }}
             >
-              {/* Floor Drop Shadow */}
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-28 h-6 bg-black/45 rounded-full blur-[4px] pointer-events-none" />
+              {/* Floor Contact Drop Shadow */}
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-28 h-5 bg-black/50 rounded-full blur-[3px] pointer-events-none" />
 
               {/* Subtle ambient sparkle for story target (NOT a giant billboard) */}
               {isNextTarget && !isNear && (
@@ -2814,7 +2829,7 @@ export const GameWorld: React.FC<GameWorldProps> = ({
                     ? { repeat: Infinity, duration: 2, ease: 'easeInOut' }
                     : { duration: 0.2 }
                 }
-                className={`transition-all duration-300 ${
+                className={`transition-all duration-300 origin-bottom ${
                   isNear
                     ? 'filter drop-shadow-[0_0_18px_rgba(251,191,36,0.7)]'
                     : 'group-hover:scale-102'
@@ -2827,9 +2842,9 @@ export const GameWorld: React.FC<GameWorldProps> = ({
               <AnimatePresence>
                 {isNear && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.85 }}
-                    animate={{ opacity: 1, y: -32, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.85 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.85 }}
+                    animate={{ opacity: 1, y: -12, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.85 }}
                     className="absolute -top-6 whitespace-nowrap z-50 pointer-events-auto"
                   >
                     <button

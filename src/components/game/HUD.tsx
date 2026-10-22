@@ -99,38 +99,35 @@ export const HUD: React.FC<HUDProps> = ({
           </div>
 
           {/* TOP CENTER: Consolidated Status Counters & SAHABAT KAFA Branding Crest */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* SAHABAT KAFA Official Branding Crest */}
-            <div className="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-amber-500/25 via-amber-400/35 to-amber-500/25 border border-amber-400/70 backdrop-blur-md px-2 sm:px-2.5 py-1.5 rounded-2xl shadow-[0_0_12px_rgba(245,158,11,0.4)] ring-1 ring-amber-300/40">
-              <span className="text-xs sm:text-sm filter drop-shadow animate-bounce">👑</span>
-              <span className="text-[9px] sm:text-[10.5px] font-black tracking-widest text-amber-300 font-game whitespace-nowrap">
+          <div className="flex items-center bg-slate-950/90 backdrop-blur-md px-2.5 sm:px-3 py-1.5 rounded-2xl border border-amber-400/40 shadow-xl gap-2 sm:gap-2.5">
+            {/* SAHABAT KAFA Title */}
+            <div className="flex items-center gap-1 pr-2 border-r border-white/15">
+              <span className="text-xs sm:text-sm">👑</span>
+              <span className="text-[9.5px] sm:text-[11px] font-black tracking-wider text-amber-300 font-game whitespace-nowrap">
                 SAHABAT KAFA
               </span>
             </div>
 
-            {/* Counters (Coins, Stars, Energy) */}
-            <div className="flex items-center gap-2 sm:gap-3 bg-slate-950/85 backdrop-blur-md px-2.5 sm:px-3 py-1.5 rounded-2xl border border-white/10 shadow-xl">
-              {/* Coins */}
-              <div className="flex items-center gap-1 text-amber-300 font-game font-black text-xs" title="Koin Emas">
-                <span>🪙</span>
-                <span className="tabular-nums">{saveData.coins}</span>
-              </div>
+            {/* Coins */}
+            <div className="flex items-center gap-1 text-amber-300 font-game font-black text-xs" title="Koin Emas">
+              <span>🪙</span>
+              <span className="tabular-nums">{saveData.coins}</span>
+            </div>
 
-              <div className="w-px h-3.5 bg-white/10" />
+            <div className="w-px h-3.5 bg-white/10" />
 
-              {/* Stars */}
-              <div className="flex items-center gap-1 text-yellow-300 font-game font-black text-xs" title="Bintang Petualangan">
-                <span>⭐</span>
-                <span className="tabular-nums">{saveData.stars}</span>
-              </div>
+            {/* Stars */}
+            <div className="flex items-center gap-1 text-yellow-300 font-game font-black text-xs" title="Bintang Petualangan">
+              <span>⭐</span>
+              <span className="tabular-nums">{saveData.stars}</span>
+            </div>
 
-              <div className="w-px h-3.5 bg-white/10 hidden xs:block" />
+            <div className="w-px h-3.5 bg-white/10 hidden xs:block" />
 
-              {/* Star Energy */}
-              <div className="hidden xs:flex items-center gap-1.5 text-cyan-300 font-game font-black text-xs" title="Energi Jurus Sahabat Kafa">
-                <span className="animate-pulse">⚡</span>
-                <span className="tabular-nums text-[10px] sm:text-[11px]">{energyPercent}%</span>
-              </div>
+            {/* Star Energy */}
+            <div className="hidden xs:flex items-center gap-1 text-cyan-300 font-game font-black text-xs" title="Energi Jurus Sahabat Kafa">
+              <span className="animate-pulse">⚡</span>
+              <span className="tabular-nums text-[10px] sm:text-[11px]">{energyPercent}%</span>
             </div>
           </div>
 

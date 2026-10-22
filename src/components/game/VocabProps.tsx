@@ -97,26 +97,31 @@ export const TableProp: React.FC = () => (
 );
 
 export const ChairProp: React.FC = () => (
-  <svg width="105" height="135" viewBox="0 0 105 135" fill="none" className="filter drop-shadow-2xl">
+  <svg width="105" height="130" viewBox="0 0 105 130" fill="none" className="filter drop-shadow-2xl">
     {/* Solid Wooden Backrest Spindles */}
-    <rect x="24" y="8" width="56" height="58" rx="10" fill="#92400E" stroke="#451A03" strokeWidth="2.5" />
-    <rect x="33" y="16" width="7" height="42" rx="3.5" fill="#FDE68A" />
-    <rect x="48" y="16" width="7" height="42" rx="3.5" fill="#FDE68A" />
-    <rect x="63" y="16" width="7" height="42" rx="3.5" fill="#FDE68A" />
+    <rect x="24" y="6" width="56" height="58" rx="10" fill="#92400E" stroke="#451A03" strokeWidth="2.5" />
+    <rect x="33" y="14" width="7" height="42" rx="3.5" fill="#FDE68A" />
+    <rect x="48" y="14" width="7" height="42" rx="3.5" fill="#FDE68A" />
+    <rect x="63" y="14" width="7" height="42" rx="3.5" fill="#FDE68A" />
     
     {/* Plump Padded Seat Cushion (Emerald Velvet with Button Tuft) */}
-    <rect x="16" y="66" width="72" height="20" rx="8" fill="#10B981" stroke="#065F46" strokeWidth="2.5" />
-    <ellipse cx="52" cy="72" rx="30" ry="7" fill="#34D399" />
-    <circle cx="52" cy="73" r="2.5" fill="#065F46" />
+    <rect x="16" y="64" width="72" height="20" rx="8" fill="#10B981" stroke="#065F46" strokeWidth="2.5" />
+    <ellipse cx="52" cy="70" rx="30" ry="7" fill="#34D399" />
+    <circle cx="52" cy="71" r="2.5" fill="#065F46" />
     
     {/* Turned Chair Legs with Cross Stretcher */}
-    <rect x="22" y="84" width="10" height="46" rx="3" fill="#92400E" stroke="#451A03" strokeWidth="1.5" />
-    <rect x="72" y="84" width="10" height="46" rx="3" fill="#92400E" stroke="#451A03" strokeWidth="1.5" />
-    <line x1="28" y1="108" x2="76" y2="108" stroke="#451A03" strokeWidth="3" strokeLinecap="round" />
-    <rect x="34" y="81" width="8" height="40" rx="2" fill="#582C05" opacity="0.7" />
-    <rect x="64" y="81" width="8" height="40" rx="2" fill="#582C05" opacity="0.7" />
+    <rect x="22" y="82" width="10" height="42" rx="3" fill="#92400E" stroke="#451A03" strokeWidth="1.5" />
+    <rect x="72" y="82" width="10" height="42" rx="3" fill="#92400E" stroke="#451A03" strokeWidth="1.5" />
+    <line x1="28" y1="104" x2="76" y2="104" stroke="#451A03" strokeWidth="3" strokeLinecap="round" />
+    <rect x="34" y="80" width="8" height="38" rx="2" fill="#582C05" opacity="0.7" />
+    <rect x="64" y="80" width="8" height="38" rx="2" fill="#582C05" opacity="0.7" />
+
+    {/* Non-Slip Rubber Foot Caps */}
+    <rect x="20" y="122" width="14" height="8" rx="3" fill="#1E293B" stroke="#0F172A" strokeWidth="1" />
+    <rect x="70" y="122" width="14" height="8" rx="3" fill="#1E293B" stroke="#0F172A" strokeWidth="1" />
   </svg>
 );
+
 
 export const BookProp: React.FC = () => (
   <svg width="135" height="115" viewBox="0 0 135 115" fill="none" className="filter drop-shadow-2xl">
@@ -433,7 +438,7 @@ export const WaterProp: React.FC = () => (
 );
 
 export const DeskProp: React.FC = () => (
-  <svg width="150" height="120" viewBox="0 0 150 120" fill="none" className="filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]">
+  <svg width="150" height="112" viewBox="0 0 150 112" fill="none" className="filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]">
     <defs>
       <linearGradient id="deskTopWood" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#F59E0B" />
